@@ -1,0 +1,4 @@
+numpy
+pycocotools>=2.0.0
+sotabenchapi>=0.0.13
+tqdm>=4.32.2
