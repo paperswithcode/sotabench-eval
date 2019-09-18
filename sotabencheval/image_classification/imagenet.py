@@ -139,8 +139,8 @@ class ImageNetEvaluator(object):
         self.pytorch_hub_url = pytorch_hub_url
         self.model_description = model_description
 
-        self.top1 = None
-        self.top5 = None
+        self.top1 = AverageMeter()
+        self.top5 = AverageMeter()
 
         self.load_targets()
 
@@ -235,6 +235,14 @@ class ImageNetEvaluator(object):
 
         self.outputs = dict(list(self.outputs.items()) + list(output_dict.items()))
 
+        for i, dict_key in enumerate(tqdm.tqdm(self.outputs.keys())):
+            output = self.outputs[dict_key]
+            target = self.targets[dict_key]
+            prec1 = top_k_accuracy_score(y_true=target, y_pred=np.array([output]), k=1)
+            prec5 = top_k_accuracy_score(y_true=target, y_pred=np.array([output]), k=5)
+            self.top1.update(prec1, 1)
+            self.top5.update(prec5, 1)
+
         if not self.first_batch_processed:
             self.batch_hash = calculate_batch_hash(self.outputs)
             self.first_batch_processed = True
@@ -252,18 +260,18 @@ class ImageNetEvaluator(object):
             unmatched_ids = set(self.outputs.keys()) - set(self.targets.keys())
 
             if len(unmatched_ids) > 0:
-                raise AttributeError('''There are {mis_no} missing and {un_no} unmatched image IDs\n\n'''
+                raise ValueError('''There are {mis_no} missing and {un_no} unmatched image IDs\n\n'''
                                      '''Missing IDs are {missing}\n\n'''
                                      '''Unmatched IDs are {unmatched}'''.format(mis_no=len(missing_ids),
                                                                                 un_no=len(unmatched_ids),
                                                                                 missing=missing_ids,
                                                                                 unmatched=unmatched_ids))
             else:
-                raise AttributeError('''There are {mis_no} missing image IDs\n\n'''
+                raise ValueError('''There are {mis_no} missing image IDs\n\n'''
                                      '''Missing IDs are {missing}'''.format(mis_no=len(missing_ids),
                                                                             missing=missing_ids))
 
-                # Do the calculation only if we have all the results...
+        # Do the calculation only if we have all the results...
         self.top1 = AverageMeter()
         self.top5 = AverageMeter()
 
@@ -289,8 +297,8 @@ class ImageNetEvaluator(object):
         :return: BenchmarkResult object with results and metadata
         """
 
-        if not self.results:
-            self.get_results()
+        # recalculate to ensure no mistakes made during batch-by-batch metric calculation
+        self.get_results()
 
         return BenchmarkResult(
             task=self.task,
