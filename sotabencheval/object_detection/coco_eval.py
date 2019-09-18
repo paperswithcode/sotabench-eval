@@ -93,14 +93,15 @@ class CocoEvaluator(object):
         for iou_type in iou_types:
             self.coco_eval[iou_type] = COCOeval(coco_gt, iouType=iou_type)
 
-        self.img_ids = []
-        self.eval_imgs = {k: [] for k in iou_types}
+        self.annotation_list = []
 
     def update(self, annotation_list):
         assert(type(annotation_list) == list)
 
+        self.annotation_list.extend(annotation_list)
+
         for iou_type in self.iou_types:
-            coco_dt = loadRes(self.coco_gt, annotation_list) if annotation_list else COCO()
+            coco_dt = loadRes(self.coco_gt, self.annotation_list) if self.annotation_list else COCO()
             coco_eval = self.coco_eval[iou_type]
             coco_eval.cocoDt = coco_dt
             coco_eval.params.imgIds = self.coco_gt.getImgIds()
