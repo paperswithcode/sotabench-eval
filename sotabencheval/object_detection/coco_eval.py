@@ -80,6 +80,9 @@ def all_gather(data):
 
 
 class CocoEvaluator(object):
+    """
+    For now this only does BBOX detection - so 'bbox' is the only acceptable iou_type
+    """
     def __init__(self, coco_gt, iou_types):
         assert isinstance(iou_types, (list, tuple))
         coco_gt = copy.deepcopy(coco_gt)
@@ -93,32 +96,22 @@ class CocoEvaluator(object):
         self.img_ids = []
         self.eval_imgs = {k: [] for k in iou_types}
 
-    def update(self, result_file):
-        assert result_file.endswith('.json')
+    def update(self, annotation_list):
+        assert(type(annotation_list) == list)
 
         for iou_type in self.iou_types:
-            coco_dt = self.coco_gt.loadRes(result_file) if result_file else COCO()
-            #coco_dt = loadRes(self.coco_gt, results) if results else COCO()
+            coco_dt = loadRes(self.coco_gt, annotation_list) if annotation_list else COCO()
             coco_eval = self.coco_eval[iou_type]
             coco_eval.cocoDt = coco_dt
             coco_eval.params.imgIds = self.coco_gt.getImgIds()
-            img_ids, eval_imgs = evaluate(coco_eval)
-            self.eval_imgs[iou_type].append(eval_imgs)
-
-    def synchronize_between_processes(self):
-        for iou_type in self.iou_types:
-            self.eval_imgs[iou_type] = np.concatenate(
-                self.eval_imgs[iou_type], 2
-            )
-            create_common_coco_eval(
-                self.coco_eval[iou_type],
-                self.img_ids,
-                self.eval_imgs[iou_type],
-            )
 
     def accumulate(self):
         for coco_eval in self.coco_eval.values():
             coco_eval.accumulate()
+
+    def evaluate(self):
+        for coco_eval in self.coco_eval.values():
+            coco_eval.evaluate()
 
     def summarize(self):
         for iou_type, coco_eval in self.coco_eval.items():
@@ -128,10 +121,6 @@ class CocoEvaluator(object):
     def prepare(self, predictions, iou_type):
         if iou_type == "bbox":
             return self.prepare_for_coco_detection(predictions)
-        elif iou_type == "segm":
-            return self.prepare_for_coco_segmentation(predictions)
-        elif iou_type == "keypoints":
-            return self.prepare_for_coco_keypoint(predictions)
         else:
             raise ValueError("Unknown iou type {}".format(iou_type))
 
@@ -155,69 +144,6 @@ class CocoEvaluator(object):
                         "score": scores[k],
                     }
                     for k, box in enumerate(boxes)
-                ]
-            )
-        return coco_results
-
-    def prepare_for_coco_segmentation(self, predictions):
-        coco_results = []
-        for original_id, prediction in predictions.items():
-            if len(prediction) == 0:
-                continue
-
-            scores = prediction["scores"]
-            labels = prediction["labels"]
-            masks = prediction["masks"]
-
-            masks = masks > 0.5
-
-            scores = prediction["scores"].tolist()
-            labels = prediction["labels"].tolist()
-
-            rles = [
-                mask_util.encode(
-                    np.array(mask[0, :, :, np.newaxis], order="F")
-                )[0]
-                for mask in masks
-            ]
-            for rle in rles:
-                rle["counts"] = rle["counts"].decode("utf-8")
-
-            coco_results.extend(
-                [
-                    {
-                        "image_id": original_id,
-                        "category_id": labels[k],
-                        "segmentation": rle,
-                        "score": scores[k],
-                    }
-                    for k, rle in enumerate(rles)
-                ]
-            )
-        return coco_results
-
-    def prepare_for_coco_keypoint(self, predictions):
-        coco_results = []
-        for original_id, prediction in predictions.items():
-            if len(prediction) == 0:
-                continue
-
-            boxes = prediction["boxes"]
-            boxes = convert_to_xywh(boxes).tolist()
-            scores = prediction["scores"].tolist()
-            labels = prediction["labels"].tolist()
-            keypoints = prediction["keypoints"]
-            keypoints = keypoints.flatten(start_dim=1).tolist()
-
-            coco_results.extend(
-                [
-                    {
-                        "image_id": original_id,
-                        "category_id": labels[k],
-                        "keypoints": keypoint,
-                        "score": scores[k],
-                    }
-                    for k, keypoint in enumerate(keypoints)
                 ]
             )
         return coco_results
@@ -303,30 +229,36 @@ def createIndex(self):
 
 maskUtils = mask_util
 
+maskUtils = mask_util
 
-def loadRes(self, resFile):
+
+def loadRes(coco, anns):
     """Load result file and return a result api object.
 
-    ``resFile`` is the file name of the result file.
+    ``anns`` is a list of dicts containing the results
+
+    In the original pycoco api, a results file is passed in, whereas in this
+    case we bypass the json file loading and ask for a list of dictionary
+    annotations to be passed directly in
 
     Returns:
         res (obj): result api object.
     """
     res = COCO()
-    res.dataset["images"] = [img for img in self.dataset["images"]]
+    res.dataset["images"] = [img for img in coco.dataset["images"]]
 
     # print('Loading and preparing results...')
     # tic = time.time()
-    if isinstance(resFile, torch._six.string_classes):
-        anns = json.load(open(resFile))
-    elif type(resFile) == np.ndarray:
-        anns = self.loadNumpyAnnotations(resFile)
-    else:
-        anns = resFile
+    # if isinstance(resFile, torch._six.string_classes):
+    #     anns = json.load(open(resFile))
+    # elif type(resFile) == np.ndarray:
+    #     anns = self.loadNumpyAnnotations(resFile)
+    # else:
+    #     anns = resFile
     assert type(anns) == list, "results in not an array of objects"
     annsImgIds = [ann["image_id"] for ann in anns]
     assert set(annsImgIds) == (
-        set(annsImgIds) & set(self.getImgIds())
+        set(annsImgIds) & set(coco.getImgIds())
     ), "Results do not correspond to current coco set"
     if "caption" in anns[0]:
         imgIds = set([img["id"] for img in res.dataset["images"]]) & set(
@@ -338,7 +270,7 @@ def loadRes(self, resFile):
         for id, ann in enumerate(anns):
             ann["id"] = id + 1
     elif "bbox" in anns[0] and not anns[0]["bbox"] == []:
-        res.dataset["categories"] = copy.deepcopy(self.dataset["categories"])
+        res.dataset["categories"] = copy.deepcopy(coco.dataset["categories"])
         for id, ann in enumerate(anns):
             bb = ann["bbox"]
             x1, x2, y1, y2 = [bb[0], bb[0] + bb[2], bb[1], bb[1] + bb[3]]
@@ -348,7 +280,7 @@ def loadRes(self, resFile):
             ann["id"] = id + 1
             ann["iscrowd"] = 0
     elif "segmentation" in anns[0]:
-        res.dataset["categories"] = copy.deepcopy(self.dataset["categories"])
+        res.dataset["categories"] = copy.deepcopy(coco.dataset["categories"])
         for id, ann in enumerate(anns):
             # now only support compressed RLE format as segmentation results
             ann["area"] = maskUtils.area(ann["segmentation"])
@@ -357,7 +289,7 @@ def loadRes(self, resFile):
             ann["id"] = id + 1
             ann["iscrowd"] = 0
     elif "keypoints" in anns[0]:
-        res.dataset["categories"] = copy.deepcopy(self.dataset["categories"])
+        res.dataset["categories"] = copy.deepcopy(coco.dataset["categories"])
         for id, ann in enumerate(anns):
             s = ann["keypoints"]
             x = s[0::3]
@@ -371,63 +303,3 @@ def loadRes(self, resFile):
     res.dataset["annotations"] = anns
     createIndex(res)
     return res
-
-
-def evaluate(self):
-    """Run per image evaluation on given images and store results.
-
-    (a list of dict) in self.evalImgs.
-    """
-    # tic = time.time()
-    # print('Running per image evaluation...')
-    p = self.params
-    # add backward compatibility if useSegm is specified in params
-    if p.useSegm is not None:
-        p.iouType = "segm" if p.useSegm == 1 else "bbox"
-        print(
-            "useSegm (deprecated) is not None. Running {} evaluation".format(
-                p.iouType
-            )
-        )
-    # print('Evaluate annotation type *{}*'.format(p.iouType))
-    p.imgIds = list(np.unique(p.imgIds))
-    if p.useCats:
-        p.catIds = list(np.unique(p.catIds))
-    p.maxDets = sorted(p.maxDets)
-    self.params = p
-
-    self._prepare()
-    # loop through images, area range, max detection number
-    catIds = p.catIds if p.useCats else [-1]
-
-    if p.iouType == "segm" or p.iouType == "bbox":
-        computeIoU = self.computeIoU
-    elif p.iouType == "keypoints":
-        computeIoU = self.computeOks
-    self.ious = {
-        (imgId, catId): computeIoU(imgId, catId)
-        for imgId in p.imgIds
-        for catId in catIds
-    }
-
-    evaluateImg = self.evaluateImg
-    maxDet = p.maxDets[-1]
-    evalImgs = [
-        evaluateImg(imgId, catId, areaRng, maxDet)
-        for catId in catIds
-        for areaRng in p.areaRng
-        for imgId in p.imgIds
-    ]
-    # this is NOT in the pycocotools code, but could be done outside
-    evalImgs = np.asarray(evalImgs).reshape(
-        len(catIds), len(p.areaRng), len(p.imgIds)
-    )
-    self._paramsEval = copy.deepcopy(self.params)
-    # toc = time.time()
-    # print('DONE (t={:0.2f}s).'.format(toc-tic))
-    return p.imgIds, evalImgs
-
-
-#################################################################
-# end of straight copy from pycocotools, just removing the prints
-#################################################################

@@ -143,7 +143,7 @@ class COCOEvaluator(object):
         self.iou_types = ['bbox']
         self.coco_evaluator = CocoEvaluator(self.coco, self.iou_types)
 
-        self.outputs = {}
+        self.detections = []
         self.results = None
         self.first_batch_processed = False
         self.batch_hash = None
@@ -201,28 +201,35 @@ class COCOEvaluator(object):
 
         return False
 
-    def update(self, result_file: str):
+    def update(self, detections: list):
         """
-        Update the evaluator with new results
+        Update the evaluator with new detections
 
+        :param annotations (list): List of detections, that will be used by the COCO.loadRes method in the
+        pycocotools API.  Each detection can take a dictionary format like the following:
 
-        :param output_dict (dict): Where keys are image IDs, and each value should be an 1D np.ndarray of size 1000
-        containing logits for that image ID.
-        :return: void - updates self.outputs with the new IDSs and prediction
+        {'image_id': 397133, 'bbox': [386.1628112792969, 69.48855590820312, 110.14895629882812, 278.2847595214844],
+        'score': 0.999152421951294, 'category_id': 1}
+
+        I.e is a list of dictionaries.
+
+        :return: void - updates self.detection with the new IDSs and prediction
 
         Examples:
             Update the evaluator with two results:
 
             .. code-block:: python
 
-                my_evaluator.update({'ILSVRC2012_val_00000293': np.array([1.04243, ...]),
-                'ILSVRC2012_val_00000294': np.array([-2.3677, ...])})
+                my_evaluator.update([{'image_id': 397133, 'bbox': [386.1628112792969, 69.48855590820312,
+                110.14895629882812, 278.2847595214844], 'score': 0.999152421951294, 'category_id': 1}])
         """
 
-        self.coco_evaluator.update(result_file)
+        self.detections.extend(detections)
+
+        self.coco_evaluator.update(detections)
 
         if not self.first_batch_processed:
-            self.batch_hash = calculate_batch_hash(result_file)
+            self.batch_hash = calculate_batch_hash(detections)
             self.first_batch_processed = True
 
     def get_results(self):
@@ -233,9 +240,12 @@ class COCOEvaluator(object):
         :return: dict with Top 1 and Top 5 Accuracy
         """
 
-        if set(self.coco.imgs.keys()) != set(self.coco_evaluator.img_ids):
-            missing_ids = set(self.coco.imgs.keys()) - set(self.coco_evaluator.img_ids)
-            unmatched_ids = set(self.coco_evaluator.img_ids) - set(self.coco.imgs.keys())
+        annotation_image_ids = [ann['image_id'] for ann in self.coco.dataset['annotations']]
+        ground_truth_image_ids = self.coco.getImgIds()
+
+        if set(annotation_image_ids) != set(ground_truth_image_ids):
+            missing_ids = set(ground_truth_image_ids) - set(annotation_image_ids)
+            unmatched_ids = set(annotation_image_ids) - set(ground_truth_image_ids)
 
             if len(unmatched_ids) > 0:
                 raise ValueError('''There are {mis_no} missing and {un_no} unmatched image IDs\n\n'''
@@ -251,8 +261,8 @@ class COCOEvaluator(object):
 
         # Do the calculation only if we have all the results...
         self.coco_evaluator = CocoEvaluator(self.coco, self.iou_types)
-        self.coco_evaluator.update(self.output)
-        self.coco_evaluator.synchronize_between_processes()
+        self.coco_evaluator.update(self.detections)
+        self.coco_evaluator.evaluate()
         self.coco_evaluator.accumulate()
         self.coco_evaluator.summarize()
 
