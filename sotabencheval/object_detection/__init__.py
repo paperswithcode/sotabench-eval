@@ -1,3 +1,3 @@
-__all__ = ["COCO"]
+__all__ = ["COCOEvaluator"]
 
-from sotabencheval.object_detection.coco import COCO
+from sotabencheval.object_detection.coco import COCOEvaluator

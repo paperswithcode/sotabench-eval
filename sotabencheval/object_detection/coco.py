@@ -1,24 +1,17 @@
-import numpy as np
 import os
 import pickle
+from pycocotools.coco import COCO
 from sotabenchapi.check import in_check_mode
 from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult, check_inputs
-import tqdm
 
-from sotabencheval.utils import AverageMeter, calculate_batch_hash, download_url, change_root_if_server
-from .utils import top_k_accuracy_score
-
-ARCHIVE_DICT = {
-    'labels': {
-        'url': 'https://github.com/paperswithcode/sotabench-eval/releases/download/0.01/imagenet_val_targets.pkl',
-        'md5': 'b652e91a9d5b47384fbe8c2e3089778a',
-    }
-}
+from sotabencheval.utils import calculate_batch_hash, download_url, change_root_if_server
+from sotabencheval.object_detection.coco_eval import CocoEvaluator
+from sotabencheval.object_detection.utils import get_coco_metrics
 
 
-class ImageNetEvaluator(object):
-    """`ImageNet <https://www.sotabench.com/benchmark/imagenet>`_ benchmark.
+class COCOEvaluator(object):
+    """`COCO <https://www.sotabench.com/benchmark/imagenet>`_ benchmark.
 
     Examples:
         Evaluate a ResNeXt model from the torchvision repository:
@@ -87,10 +80,12 @@ class ImageNetEvaluator(object):
             evaluator.save()
     """
 
-    task = "Image Classification"
+    task = "Object Detection"
 
     def __init__(self,
                  root: str = '.',
+                 split: str = "val",
+                 dataset_year: str = "2017",
                  paper_model_name: str = None,
                  paper_arxiv_id: str = None,
                  paper_pwc_id: str = None,
@@ -100,11 +95,13 @@ class ImageNetEvaluator(object):
         """Benchmarking function.
 
         Args:
-            root (string): Root directory of the ImageNet Dataset.
+            root (string): Root directory of the COCO Dataset.
+            split (str) : the split for COCO to use, e.g. 'val'
+            dataset_year (str): the dataset year for COCO to use; the
             paper_model_name (str, optional): The name of the model from the
                 paper - if you want to link your build to a machine learning
-                paper. See the ImageNet benchmark page for model names,
-                https://www.sotabench.com/benchmark/imagenet, e.g. on the paper
+                paper. See the COCO benchmark page for model names,
+                https://www.sotabench.com/benchmark/coco, e.g. on the paper
                 leaderboard tab.
             paper_arxiv_id (str, optional): Optional linking to ArXiv if you
                 want to link to papers on the leaderboard; put in the
@@ -120,17 +117,16 @@ class ImageNetEvaluator(object):
                     {'Top 1 Accuracy': 0.543, 'Top 5 Accuracy': 0.654}.
 
                 Ensure that the metric names match those on the sotabench
-                leaderboard - for ImageNet it should be 'Top 1 Accuracy' and
-                'Top 5 Accuracy'.
+                leaderboard - for COCO it should be 'box AP', 'AP50',
+                'AP75', 'APS', 'APM', 'APL'
             pytorch_hub_url (str, optional): Optional linking to PyTorch Hub
                 url if your model is linked there; e.g:
                 'nvidia_deeplearningexamples_waveglow'.
             model_description (str, optional): Optional model description.
         """
 
-        root = self.root = os.path.expanduser(change_root_if_server(
-            root=root,
-            server_root="./.data/vision/imagenet"))
+        root = self.root = change_root_if_server(root=root,
+                                                 server_root="./.data/vision/coco")
 
         self.paper_model_name = paper_model_name
         self.paper_arxiv_id = paper_arxiv_id
@@ -139,10 +135,13 @@ class ImageNetEvaluator(object):
         self.pytorch_hub_url = pytorch_hub_url
         self.model_description = model_description
 
-        self.top1 = AverageMeter()
-        self.top5 = AverageMeter()
+        annFile = os.path.join(
+            root, "annotations/instances_%s%s.json" % (split, dataset_year)
+        ),
 
-        self.load_targets()
+        self.coco = COCO(annFile)
+        self.iou_types = ['bbox']
+        self.coco_evaluator = CocoEvaluator(self.coco, self.iou_types)
 
         self.outputs = {}
         self.results = None
@@ -202,20 +201,7 @@ class ImageNetEvaluator(object):
 
         return False
 
-    def load_targets(self):
-        """
-        Downloads ImageNet labels and IDs and puts into self.root, then loads at self.targets
-        :return:
-        """
-        download_url(
-            url=ARCHIVE_DICT['labels']['url'],
-            root=self.root,
-            md5=ARCHIVE_DICT['labels']['md5'])
-
-        with open(os.path.join(self.root, 'imagenet_val_targets.pkl'), 'rb') as handle:
-            self.targets = pickle.load(handle)
-
-    def update(self, output_dict: dict):
+    def update(self, result_file: str):
         """
         Update the evaluator with new results
 
@@ -233,18 +219,10 @@ class ImageNetEvaluator(object):
                 'ILSVRC2012_val_00000294': np.array([-2.3677, ...])})
         """
 
-        self.outputs = dict(list(self.outputs.items()) + list(output_dict.items()))
-
-        for i, dict_key in enumerate(output_dict.keys()):
-            output = self.outputs[dict_key]
-            target = self.targets[dict_key]
-            prec1 = top_k_accuracy_score(y_true=target, y_pred=np.array([output]), k=1)
-            prec5 = top_k_accuracy_score(y_true=target, y_pred=np.array([output]), k=5)
-            self.top1.update(prec1, 1)
-            self.top5.update(prec5, 1)
+        self.coco_evaluator.update(result_file)
 
         if not self.first_batch_processed:
-            self.batch_hash = calculate_batch_hash(output_dict)
+            self.batch_hash = calculate_batch_hash(result_file)
             self.first_batch_processed = True
 
     def get_results(self):
@@ -255,9 +233,9 @@ class ImageNetEvaluator(object):
         :return: dict with Top 1 and Top 5 Accuracy
         """
 
-        if set(self.targets.keys()) != set(self.outputs.keys()):
-            missing_ids = set(self.targets.keys()) - set(self.outputs.keys())
-            unmatched_ids = set(self.outputs.keys()) - set(self.targets.keys())
+        if set(self.coco.imgs.keys()) != set(self.coco_evaluator.img_ids):
+            missing_ids = set(self.coco.imgs.keys()) - set(self.coco_evaluator.img_ids)
+            unmatched_ids = set(self.coco_evaluator.img_ids) - set(self.coco.imgs.keys())
 
             if len(unmatched_ids) > 0:
                 raise ValueError('''There are {mis_no} missing and {un_no} unmatched image IDs\n\n'''
@@ -272,18 +250,13 @@ class ImageNetEvaluator(object):
                                                                             missing=missing_ids))
 
         # Do the calculation only if we have all the results...
-        self.top1 = AverageMeter()
-        self.top5 = AverageMeter()
+        self.coco_evaluator = CocoEvaluator(self.coco, self.iou_types)
+        self.coco_evaluator.update(self.output)
+        self.coco_evaluator.synchronize_between_processes()
+        self.coco_evaluator.accumulate()
+        self.coco_evaluator.summarize()
 
-        for i, dict_key in enumerate(tqdm.tqdm(self.targets.keys())):
-            output = self.outputs[dict_key]
-            target = self.targets[dict_key]
-            prec1 = top_k_accuracy_score(y_true=target, y_pred=np.array([output]), k=1)
-            prec5 = top_k_accuracy_score(y_true=target, y_pred=np.array([output]), k=5)
-            self.top1.update(prec1, 1)
-            self.top5.update(prec5, 1)
-
-        self.results = {'Top 1 Accuracy': self.top1.avg, 'Top 5 Accuracy': self.top5.avg}
+        self.results = get_coco_metrics(self.coco_evaluator)
 
         return self.results
 
@@ -303,7 +276,7 @@ class ImageNetEvaluator(object):
         return BenchmarkResult(
             task=self.task,
             config={},
-            dataset='ImageNet',
+            dataset='COCO minival',
             results=self.results,
             pytorch_hub_id=self.pytorch_hub_url,
             model=self.paper_model_name,
