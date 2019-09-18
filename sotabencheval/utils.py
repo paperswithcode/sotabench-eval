@@ -36,7 +36,6 @@ def makedir_exist_ok(dirpath):
         else:
             raise
 
-
 def gen_bar_updater():
     pbar = tqdm(total=None)
 
@@ -48,7 +47,6 @@ def gen_bar_updater():
 
     return bar_update
 
-
 def calculate_md5(fpath, chunk_size=1024 * 1024):
     md5 = hashlib.md5()
     with open(fpath, 'rb') as f:
@@ -56,10 +54,8 @@ def calculate_md5(fpath, chunk_size=1024 * 1024):
             md5.update(chunk)
     return md5.hexdigest()
 
-
 def check_md5(fpath, md5, **kwargs):
     return md5 == calculate_md5(fpath, **kwargs)
-
 
 def check_integrity(fpath, md5=None):
     if not os.path.isfile(fpath):
@@ -67,7 +63,6 @@ def check_integrity(fpath, md5=None):
     if md5 is None:
         return True
     return check_md5(fpath, md5)
-
 
 def download_url(url, root, filename=None, md5=None):
     """Download a file from a url and place it in root - utility function taken from torchvision repository
@@ -107,3 +102,14 @@ def download_url(url, root, filename=None, md5=None):
                 )
             else:
                 raise e
+
+def calculate_batch_hash(output):
+    """Calculate the hash for the output of a batch
+
+    Args:
+        output: data to be hashed
+    """
+
+    m = hashlib.sha256()
+    m.update(str(output).encode("utf-8"))
+    return m.hexdigest()

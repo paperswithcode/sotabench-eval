@@ -1,10 +1,12 @@
 import numpy as np
 import os
 import pickle
+from sotabenchapi.check import in_check_mode
+from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult, check_inputs
 import tqdm
 
-from sotabencheval.utils import AverageMeter, download_url
+from sotabencheval.utils import AverageMeter, calculate_batch_hash, download_url
 from .utils import top_k_accuracy_score
 
 ARCHIVE_DICT = {
@@ -142,9 +144,67 @@ class ImageNetEvaluator(object):
 
         self.outputs = {}
         self.results = None
+        self.first_batch_processed = False
+        self.batch_hash = None
+
+    @property
+    def cache_exists(self):
+        """
+        Checks whether the cache exists in the sotabench.com database - if so
+        then sets self.results to cached results and returns True.
+
+        You can use this property for control flow to break a for loop over a dataset
+        after the first iteration. This prevents rerunning the same calculation for the
+        same model twice.
+
+        Examples:
+            Breaking a for loop
+
+            .. code-block:: python
+
+                ...
+
+                with torch.no_grad():
+                    for i, (input, target) in enumerate(test_loader):
+                        input = input.to(device=device, non_blocking=True)
+                        target = target.to(device=device, non_blocking=True)
+                        output = model(input)
+
+                        image_ids = [img[0].split('/')[-1].replace('.JPEG', '') for img in test_loader.dataset.imgs[i*test_loader.batch_size:(i+1)*test_loader.batch_size]]
+
+                        evaluator.update(dict(zip(image_ids, list(output.cpu().numpy()))))
+
+                        if evaluator.cache_exists:
+                            break
+
+                evaluator.save()
+
+        :return:
+        """
+
+        if not self.first_batch_processed:
+            raise ValueError('No batches of data have been processed so no batch_hash exists')
+
+        if not in_check_mode():
+            return None
+
+        client = Client.public()
+        cached_res = client.get_results_by_run_hash(self.batch_hash)
+        if cached_res:
+            self.results = cached_res
+            print(
+                "No model change detected (using the first batch run "
+                "hash). Will use cached results."
+            )
+            return True
+
+        return False
 
     def load_targets(self):
-
+        """
+        Downloads ImageNet labels and IDs and puts into self.root, then loads at self.targets
+        :return:
+        """
         download_url(
             url=ARCHIVE_DICT['labels']['url'],
             root=self.root,
@@ -172,6 +232,10 @@ class ImageNetEvaluator(object):
         """
 
         self.outputs = dict(list(self.outputs.items()) + list(output_dict.items()))
+
+        if not self.first_batch_processed:
+            self.batch_hash = calculate_batch_hash(self.outputs)
+            self.first_batch_processed = True
 
     def get_results(self):
         """
@@ -237,5 +301,5 @@ class ImageNetEvaluator(object):
             arxiv_id=self.paper_arxiv_id,
             pwc_id=self.paper_pwc_id,
             paper_results=self.paper_results,
-            run_hash=None,
+            run_hash=self.batch_hash,
         )
