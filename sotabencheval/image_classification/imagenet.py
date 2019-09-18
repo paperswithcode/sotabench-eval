@@ -1,11 +1,18 @@
 import numpy as np
+import os
 import pickle
 from sotabenchapi.core import BenchmarkResult, check_inputs
 import tqdm
 
-from sotabencheval.utils import AverageMeter
+from sotabencheval.utils import AverageMeter, download_url
 from .utils import top_k_accuracy_score
 
+ARCHIVE_DICT = {
+    'labels': {
+        'url': 'https://github.com/paperswithcode/sotabench-eval/releases/download/0.01/imagenet_val_targets.pkl',
+        'md5': 'b652e91a9d5b47384fbe8c2e3089778a',
+    }
+}
 
 
 class ImageNetEvaluator(object):
@@ -81,6 +88,7 @@ class ImageNetEvaluator(object):
     task = "Image Classification"
 
     def __init__(self,
+                 root: str = '.',
                  paper_model_name: str = None,
                  paper_arxiv_id: str = None,
                  paper_pwc_id: str = None,
@@ -90,6 +98,7 @@ class ImageNetEvaluator(object):
         """Benchmarking function.
 
         Args:
+            root (string): Root directory of the ImageNet Dataset.
             paper_model_name (str, optional): The name of the model from the
                 paper - if you want to link your build to a machine learning
                 paper. See the ImageNet benchmark page for model names,
@@ -117,6 +126,8 @@ class ImageNetEvaluator(object):
             model_description (str, optional): Optional model description.
         """
 
+        root = self.root = os.path.expanduser(root)
+
         self.paper_model_name = paper_model_name
         self.paper_arxiv_id = paper_arxiv_id
         self.paper_pwc_id = paper_pwc_id
@@ -127,11 +138,20 @@ class ImageNetEvaluator(object):
         self.top1 = None
         self.top5 = None
 
-        with open('imagenet_val_targets.pkl', 'rb') as handle:
-            self.targets = pickle.load(handle)
+        self.load_targets()
 
         self.outputs = {}
         self.results = None
+
+    def load_targets(self):
+
+        download_url(
+            url=ARCHIVE_DICT['labels']['url'],
+            root=self.root,
+            md5=ARCHIVE_DICT['labels']['md5'])
+
+        with open(os.path.join(self.root, 'imagenet_val_targets.pkl'), 'rb') as handle:
+            self.targets = pickle.load(handle)
 
     def update(self, output_dict: dict):
         """
