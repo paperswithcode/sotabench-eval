@@ -113,3 +113,17 @@ def calculate_batch_hash(output):
     m = hashlib.sha256()
     m.update(str(output).encode("utf-8"))
     return m.hexdigest()
+
+
+def change_root_if_server(root, server_root):
+    """
+    :param root: string with a user-specified root
+    :param server_root: string with a server root
+    :return: server_root if SOTABENCH_SERVER env variable is set, else root
+    """
+    check_server = os.environ.get("SOTABENCH_SERVER")
+
+    if check_server == 'true':
+        return server_root
+
+    return root

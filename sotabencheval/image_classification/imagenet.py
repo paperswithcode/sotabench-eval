@@ -6,7 +6,7 @@ from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult, check_inputs
 import tqdm
 
-from sotabencheval.utils import AverageMeter, calculate_batch_hash, download_url
+from sotabencheval.utils import AverageMeter, calculate_batch_hash, download_url, change_root_if_server
 from .utils import top_k_accuracy_score
 
 ARCHIVE_DICT = {
@@ -128,7 +128,9 @@ class ImageNetEvaluator(object):
             model_description (str, optional): Optional model description.
         """
 
-        root = self.root = os.path.expanduser(root)
+        root = self.root = os.path.expanduser(change_root_if_server(
+            root=root,
+            server_root="./.data/vision/imagenet"))
 
         self.paper_model_name = paper_model_name
         self.paper_arxiv_id = paper_arxiv_id
