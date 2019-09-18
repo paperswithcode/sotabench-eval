@@ -1,9 +1,10 @@
 import numpy as np
 
 def top_k_accuracy_score(y_true, y_pred, k=5, normalize=True):
-    """Top k Accuracy classification score.
-    """
-    assert(y_true.shape == 1) # should be 1D, each index is obs true label
+    """Top k Accuracy classification score."""
+
+    if len(y_true.shape) == 2:
+        y_true = y_true[0] # should be one-dimensional
 
     num_obs, num_labels = y_pred.shape
 
