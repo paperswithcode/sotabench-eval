@@ -2,7 +2,7 @@ import io
 from setuptools import setup
 from torchbench.version import __version__
 
-name = "sotabench-eval"
+name = "sotabencheval"
 author = "Atlas ML"
 author_email = "hello@sotabench.com"
 license = "Apache-2.0"

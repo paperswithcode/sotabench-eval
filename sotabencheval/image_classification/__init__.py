@@ -1,3 +1,3 @@
-__all__ = ["ImageNet"]
+__all__ = ["ImageNetEvaluator"]
 
-from sotabencheval.image_classification.imagenet import ImageNet
+from sotabencheval.image_classification.imagenet import ImageNetEvaluator
