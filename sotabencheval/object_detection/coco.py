@@ -11,71 +11,26 @@ from sotabencheval.object_detection.utils import get_coco_metrics
 
 
 class COCOEvaluator(object):
-    """`COCO <https://www.sotabench.com/benchmark/imagenet>`_ benchmark.
+    """`COCO <https://www.sotabench.com/benchmark/coco>`_ benchmark.
 
     Examples:
         Evaluate a ResNeXt model from the torchvision repository:
 
         .. code-block:: python
 
-            import numpy as np
-            import PIL
-            import torch
-            from sotabencheval.image_classification import ImageNetEvaluator
-            from torchvision.models.resnet import resnext101_32x8d
-            import torchvision.transforms as transforms
-            from torchvision.datasets import ImageNet
-            from torch.utils.data import DataLoader
-
-            model = resnext101_32x8d(pretrained=True)
-
-            # Define the transforms need to convert ImageNet data to expected
-            # model input
-            normalize = transforms.Normalize(
-                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-            )
-            input_transform = transforms.Compose([
-                transforms.Resize(256, PIL.Image.BICUBIC),
-                transforms.CenterCrop(224),
-                transforms.ToTensor(),
-                normalize,
-            ])
-
-            test_dataset = ImageNet(
-                './data',
-                split="val",
-                transform=input_transform,
-                target_transform=None,
-                download=True,
-            )
-
-            test_loader = DataLoader(
-                test_dataset,
-                batch_size=128,
-                shuffle=False,
-                num_workers=4,
-                pin_memory=True,
-            )
-
-            model = model.cuda()
-            model.eval()
-
-            final_output = None
-            evaluator = ImageNetEvaluator(
-                             paper_model_name='ResNeXt-101-32x8d',
-                             paper_arxiv_id='1611.05431')
+            ...
 
             with torch.no_grad():
-                for i, (input, target) in enumerate(test_loader):
-                    input = input.to(device=device, non_blocking=True)
-                    target = target.to(device=device, non_blocking=True)
-                    output = model(input)
+                for i, (input, target) in enumerate(iterator):
+                    input, target = send_data_to_device(input, target, device=device)
+                    original_output = model(input)
+                    output, target = model_output_transform(original_output, target)
+                    result = {
+                        tar["image_id"].item(): out for tar, out in zip(target, output)
+                    }
+                    result = prepare_for_coco_detection(result) # convert to right format
 
-                    image_ids = [img[0].split('/')[-1].replace('.JPEG', '') for img in test_loader.dataset.imgs[i*test_loader.batch_size:(i+1)*test_loader.batch_size]]
-
-                    evaluator.update(dict(zip(image_ids, list(output.cpu().numpy()))))
-
-            print(evaluator.get_results())
+                    evaluator.update(result)
 
             evaluator.save()
     """
@@ -114,7 +69,7 @@ class COCOEvaluator(object):
                 the paper results yourself through this argument, where keys
                 are metric names, values are metric values. e.g::
 
-                    {'Top 1 Accuracy': 0.543, 'Top 5 Accuracy': 0.654}.
+                    {'box AP': 0.349, 'AP50': 0.592, ...}.
 
                 Ensure that the metric names match those on the sotabench
                 leaderboard - for COCO it should be 'box AP', 'AP50',
@@ -166,21 +121,23 @@ class COCOEvaluator(object):
                 ...
 
                 with torch.no_grad():
-                    for i, (input, target) in enumerate(test_loader):
-                        input = input.to(device=device, non_blocking=True)
-                        target = target.to(device=device, non_blocking=True)
-                        output = model(input)
+                    for i, (input, target) in enumerate(iterator):
+                        input, target = send_data_to_device(input, target, device=device)
+                        original_output = model(input)
+                        output, target = model_output_transform(original_output, target)
+                        result = {
+                            tar["image_id"].item(): out for tar, out in zip(target, output)
+                        }
+                        result = prepare_for_coco_detection(result) # convert to right format
 
-                        image_ids = [img[0].split('/')[-1].replace('.JPEG', '') for img in test_loader.dataset.imgs[i*test_loader.batch_size:(i+1)*test_loader.batch_size]]
-
-                        evaluator.update(dict(zip(image_ids, list(output.cpu().numpy()))))
+                        evaluator.update(result)
 
                         if evaluator.cache_exists:
                             break
 
                 evaluator.save()
 
-        :return:
+        :return: bool or None (if not in check mode)
         """
 
         if not self.first_batch_processed:
@@ -234,32 +191,11 @@ class COCOEvaluator(object):
 
     def get_results(self):
         """
-        Gets the results for the evaluator. This method only runs if predictions for all 5,000 ImageNet validation
-        images are available. Otherwise raises an error and informs you of the missing or unmatched IDs.
+        Reruns the evaluation using the accumulated detections, returns COCO results with AP metrics
 
-        :return: dict with Top 1 and Top 5 Accuracy
+        :return: dict with COCO AP metrics
         """
 
-        annotation_image_ids = [ann['image_id'] for ann in self.coco.dataset['annotations']]
-        ground_truth_image_ids = self.coco.getImgIds()
-
-        if set(annotation_image_ids) != set(ground_truth_image_ids):
-            missing_ids = set(ground_truth_image_ids) - set(annotation_image_ids)
-            unmatched_ids = set(annotation_image_ids) - set(ground_truth_image_ids)
-
-            if len(unmatched_ids) > 0:
-                raise ValueError('''There are {mis_no} missing and {un_no} unmatched image IDs\n\n'''
-                                     '''Missing IDs are {missing}\n\n'''
-                                     '''Unmatched IDs are {unmatched}'''.format(mis_no=len(missing_ids),
-                                                                                un_no=len(unmatched_ids),
-                                                                                missing=missing_ids,
-                                                                                unmatched=unmatched_ids))
-            else:
-                raise ValueError('''There are {mis_no} missing image IDs\n\n'''
-                                     '''Missing IDs are {missing}'''.format(mis_no=len(missing_ids),
-                                                                            missing=missing_ids))
-
-        # Do the calculation only if we have all the results...
         self.coco_evaluator = CocoEvaluator(self.coco, self.iou_types)
         self.coco_evaluator.update(self.detections)
         self.coco_evaluator.evaluate()
