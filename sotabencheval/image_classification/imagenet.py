@@ -235,7 +235,7 @@ class ImageNetEvaluator(object):
 
         self.outputs = dict(list(self.outputs.items()) + list(output_dict.items()))
 
-        for i, dict_key in enumerate(self.outputs.keys()):
+        for i, dict_key in enumerate(output_dict.keys()):
             output = self.outputs[dict_key]
             target = self.targets[dict_key]
             prec1 = top_k_accuracy_score(y_true=target, y_pred=np.array([output]), k=1)
@@ -244,7 +244,7 @@ class ImageNetEvaluator(object):
             self.top5.update(prec5, 1)
 
         if not self.first_batch_processed:
-            self.batch_hash = calculate_batch_hash(self.outputs)
+            self.batch_hash = calculate_batch_hash(output_dict)
             self.first_batch_processed = True
 
     def get_results(self):
