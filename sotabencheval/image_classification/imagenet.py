@@ -235,7 +235,7 @@ class ImageNetEvaluator(object):
 
         self.outputs = dict(list(self.outputs.items()) + list(output_dict.items()))
 
-        for i, dict_key in enumerate(tqdm.tqdm(self.outputs.keys())):
+        for i, dict_key in enumerate(self.outputs.keys()):
             output = self.outputs[dict_key]
             target = self.targets[dict_key]
             prec1 = top_k_accuracy_score(y_true=target, y_pred=np.array([output]), k=1)
