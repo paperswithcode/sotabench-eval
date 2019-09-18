@@ -137,7 +137,7 @@ class COCOEvaluator(object):
 
         annFile = os.path.join(
             root, "annotations/instances_%s%s.json" % (split, dataset_year)
-        ),
+        )
 
         self.coco = COCO(annFile)
         self.iou_types = ['bbox']
