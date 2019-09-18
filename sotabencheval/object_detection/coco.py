@@ -1,11 +1,11 @@
 import os
-import pickle
+from os.path import dirname as up
 from pycocotools.coco import COCO
 from sotabenchapi.check import in_check_mode
 from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult, check_inputs
 
-from sotabencheval.utils import calculate_batch_hash, download_url, change_root_if_server
+from sotabencheval.utils import calculate_batch_hash, extract_archive, change_root_if_server
 from sotabencheval.object_detection.coco_eval import CocoEvaluator
 from sotabencheval.object_detection.utils import get_coco_metrics
 
@@ -89,10 +89,13 @@ class COCOEvaluator(object):
         self.paper_results = paper_results
         self.pytorch_hub_url = pytorch_hub_url
         self.model_description = model_description
+        self.split = split
 
         annFile = os.path.join(
-            root, "annotations/instances_%s%s.json" % (split, dataset_year)
+            root, "annotations/instances_%s%s.json" % (self.split, dataset_year)
         )
+
+        self._download(annFile)
 
         self.coco = COCO(annFile)
         self.iou_types = ['bbox']
@@ -102,6 +105,22 @@ class COCOEvaluator(object):
         self.results = None
         self.first_batch_processed = False
         self.batch_hash = None
+
+    def _download(self, annFile):
+        if not os.path.isdir(annFile):
+            if "2017" in annFile:
+                annotations_dir_zip = os.path.join(
+                    up(up(annFile)), "annotations_train%2017.zip" % self.split
+                )
+            elif "2014" in annFile:
+                annotations_dir_zip = os.path.join(
+                    up(up(annFile)), "annotations_train%2014.zip" % self.split
+                )
+            else:
+                annotations_dir_zip = None
+
+            if (annotations_dir_zip is not None and os.path.isfile(annotations_dir_zip)):
+                extract_archive(from_path=annotations_dir_zip, to_path=up(self.root))
 
     @property
     def cache_exists(self):

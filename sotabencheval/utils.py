@@ -1,7 +1,11 @@
-import errno
 import hashlib
+import gzip
+import errno
+import tarfile
+import zipfile
 import os
 from tqdm import tqdm
+
 
 class AverageMeter(object):
     """Computes and stores the average and current value."""
@@ -23,6 +27,36 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+
+
+def calculate_batch_hash(output):
+    """Calculate the hash for the output of a batch
+
+    Args:
+        output: data to be hashed
+    """
+
+    m = hashlib.sha256()
+    m.update(str(output).encode("utf-8"))
+    return m.hexdigest()
+
+
+def change_root_if_server(root, server_root):
+    """
+    :param root: string with a user-specified root
+    :param server_root: string with a server root
+    :return: server_root if SOTABENCH_SERVER env variable is set, else root
+    """
+    check_server = os.environ.get("SOTABENCH_SERVER")
+
+    if check_server == 'true':
+        return server_root
+
+    return root
+
+
+# below utilities are taken from the torchvision repository
+
 
 def makedir_exist_ok(dirpath):
     """
@@ -47,6 +81,7 @@ def gen_bar_updater():
 
     return bar_update
 
+
 def calculate_md5(fpath, chunk_size=1024 * 1024):
     md5 = hashlib.md5()
     with open(fpath, 'rb') as f:
@@ -54,8 +89,10 @@ def calculate_md5(fpath, chunk_size=1024 * 1024):
             md5.update(chunk)
     return md5.hexdigest()
 
+
 def check_md5(fpath, md5, **kwargs):
     return md5 == calculate_md5(fpath, **kwargs)
+
 
 def check_integrity(fpath, md5=None):
     if not os.path.isfile(fpath):
@@ -63,6 +100,7 @@ def check_integrity(fpath, md5=None):
     if md5 is None:
         return True
     return check_md5(fpath, md5)
+
 
 def download_url(url, root, filename=None, md5=None):
     """Download a file from a url and place it in root - utility function taken from torchvision repository
@@ -103,27 +141,42 @@ def download_url(url, root, filename=None, md5=None):
             else:
                 raise e
 
-def calculate_batch_hash(output):
-    """Calculate the hash for the output of a batch
 
-    Args:
-        output: data to be hashed
-    """
-
-    m = hashlib.sha256()
-    m.update(str(output).encode("utf-8"))
-    return m.hexdigest()
+def _is_tar(filename):
+    return filename.endswith(".tar")
 
 
-def change_root_if_server(root, server_root):
-    """
-    :param root: string with a user-specified root
-    :param server_root: string with a server root
-    :return: server_root if SOTABENCH_SERVER env variable is set, else root
-    """
-    check_server = os.environ.get("SOTABENCH_SERVER")
+def _is_targz(filename):
+    return filename.endswith(".tar.gz")
 
-    if check_server == 'true':
-        return server_root
 
-    return root
+def _is_gzip(filename):
+    return filename.endswith(".gz") and not filename.endswith(".tar.gz")
+
+
+def _is_zip(filename):
+    return filename.endswith(".zip")
+
+
+def extract_archive(from_path, to_path=None, remove_finished=False):
+    if to_path is None:
+        to_path = os.path.dirname(from_path)
+
+    if _is_tar(from_path):
+        with tarfile.open(from_path, 'r') as tar:
+            tar.extractall(path=to_path)
+    elif _is_targz(from_path):
+        with tarfile.open(from_path, 'r:gz') as tar:
+            tar.extractall(path=to_path)
+    elif _is_gzip(from_path):
+        to_path = os.path.join(to_path, os.path.splitext(os.path.basename(from_path))[0])
+        with open(to_path, "wb") as out_f, gzip.GzipFile(from_path) as zip_f:
+            out_f.write(zip_f.read())
+    elif _is_zip(from_path):
+        with zipfile.ZipFile(from_path, 'r') as z:
+            z.extractall(to_path)
+    else:
+        raise ValueError("Extraction of {} not supported".format(from_path))
+
+    if remove_finished:
+        os.remove(from_path)
