@@ -110,11 +110,11 @@ class COCOEvaluator(object):
         if not os.path.isdir(annFile):
             if "2017" in annFile:
                 annotations_dir_zip = os.path.join(
-                    up(up(annFile)), "annotations_train%2017.zip" % self.split
+                    up(up(annFile)), "annotations_train%s2017.zip" % self.split
                 )
             elif "2014" in annFile:
                 annotations_dir_zip = os.path.join(
-                    up(up(annFile)), "annotations_train%2014.zip" % self.split
+                    up(up(annFile)), "annotations_train%s2014.zip" % self.split
                 )
             else:
                 annotations_dir_zip = None
