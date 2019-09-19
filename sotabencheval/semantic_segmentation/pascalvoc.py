@@ -278,10 +278,6 @@ class PASCALVOCEvaluator(object):
         self.targets = np.append(self.targets, targets)
         self.outputs = np.append(self.outputs, outputs)
 
-
-        self.targets.extend(targets)
-        self.outputs.extend(outputs)
-
         if not self.first_batch_processed:
             self.batch_hash = calculate_batch_hash(targets + outputs)
             self.first_batch_processed = True
