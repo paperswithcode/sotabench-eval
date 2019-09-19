@@ -1,3 +1,4 @@
+import numpy as np
 import os
 from sotabenchapi.check import in_check_mode
 from sotabenchapi.client import Client
@@ -132,8 +133,8 @@ class PASCALVOCEvaluator(object):
 
         self.voc_evaluator = ConfusionMatrix(21)
 
-        self.outputs = []
-        self.targets = []
+        self.outputs = np.array([])
+        self.targets = np.array([])
 
         self.url = DATASET_YEAR_DICT[self.dataset_year]['url']
         self.filename = DATASET_YEAR_DICT[self.dataset_year]['filename']
@@ -222,12 +223,12 @@ class PASCALVOCEvaluator(object):
 
         return False
 
-    def add(self, outputs: list, targets: list):
+    def add(self, outputs: np.ndarray, targets: np.ndarray):
         """
         Update the evaluator with new results from the model
 
-        :param outputs (list): List of semantic class predictions per pixel
-        :param targets (list): List of ground truth semantic classes per pixel
+        :param outputs (np.ndarray): 1D np.ndarray of semantic class predictions per pixel
+        :param targets (np.ndarray): 1D np.ndarray of ground truth semantic classes per pixel
 
         The method requires an outputs input and a targets input - both flattened.
 
@@ -253,15 +254,15 @@ class PASCALVOCEvaluator(object):
         The output might look something like this:
 
         flattened_batch_output
-        >> [6, 6, 6, 6, 6, ...]
+        >> array([6, 6, 6, 6, 6, ...])
 
         flattened_batch_target
-        >> [6, 6, 6, 6, 6, ...]
+        >> array([6, 6, 6, 6, 6, ...])
 
         In both cases, the prediction and ground truth have class 6 as the semantic label for the first 5
         pixels - so the model is correct.
 
-        These flattened lists can then be passed into the .add() method of the evaluator
+        These flattened arrays can then be passed into the .add() method of the evaluator
 
         .. code-block:: python
 
@@ -273,6 +274,10 @@ class PASCALVOCEvaluator(object):
         """
 
         self.voc_evaluator.update(targets, outputs)
+
+        self.targets = np.append(self.targets, targets)
+        self.outputs = np.append(self.outputs, outputs)
+
 
         self.targets.extend(targets)
         self.outputs.extend(outputs)
