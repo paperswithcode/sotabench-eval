@@ -80,7 +80,7 @@ class ImageNetEvaluator(object):
 
                     image_ids = [img[0].split('/')[-1].replace('.JPEG', '') for img in test_loader.dataset.imgs[i*test_loader.batch_size:(i+1)*test_loader.batch_size]]
 
-                    evaluator.update(dict(zip(image_ids, list(output.cpu().numpy()))))
+                    evaluator.add(dict(zip(image_ids, list(output.cpu().numpy()))))
 
             print(evaluator.get_results())
 
@@ -174,7 +174,7 @@ class ImageNetEvaluator(object):
 
                         image_ids = [img[0].split('/')[-1].replace('.JPEG', '') for img in test_loader.dataset.imgs[i*test_loader.batch_size:(i+1)*test_loader.batch_size]]
 
-                        evaluator.update(dict(zip(image_ids, list(output.cpu().numpy()))))
+                        evaluator.add(dict(zip(image_ids, list(output.cpu().numpy()))))
 
                         if evaluator.cache_exists:
                             break
@@ -215,7 +215,7 @@ class ImageNetEvaluator(object):
         with open(os.path.join(self.root, 'imagenet_val_targets.pkl'), 'rb') as handle:
             self.targets = pickle.load(handle)
 
-    def update(self, output_dict: dict):
+    def add(self, output_dict: dict):
         """
         Update the evaluator with new results
 
@@ -229,7 +229,7 @@ class ImageNetEvaluator(object):
 
             .. code-block:: python
 
-                my_evaluator.update({'ILSVRC2012_val_00000293': np.array([1.04243, ...]),
+                my_evaluator.add({'ILSVRC2012_val_00000293': np.array([1.04243, ...]),
                 'ILSVRC2012_val_00000294': np.array([-2.3677, ...])})
         """
 

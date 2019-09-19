@@ -38,6 +38,7 @@ setup(
         name,
         "sotabencheval.image_classification",
         "sotabencheval.object_detection",
+        "sotabencheval.semantic_segmentation",
     ],
     include_package_data=True,
     install_requires=get_requirements(),

@@ -20,6 +20,10 @@ class COCOEvaluator(object):
 
             ...
 
+            evaluator = COCOEvaluator(
+                             paper_model_name='Mask R-CNN',
+                             paper_arxiv_id='1703.06870')
+
             with torch.no_grad():
                 for i, (input, target) in enumerate(iterator):
                     input, target = send_data_to_device(input, target, device=device)
@@ -30,7 +34,7 @@ class COCOEvaluator(object):
                     }
                     result = prepare_for_coco_detection(result) # convert to right format
 
-                    evaluator.update(result)
+                    evaluator.add(result)
 
             evaluator.save()
     """
@@ -52,7 +56,7 @@ class COCOEvaluator(object):
         Args:
             root (string): Root directory of the COCO Dataset.
             split (str) : the split for COCO to use, e.g. 'val'
-            dataset_year (str): the dataset year for COCO to use; the
+            dataset_year (str): the dataset year for COCO to use
             paper_model_name (str, optional): The name of the model from the
                 paper - if you want to link your build to a machine learning
                 paper. See the COCO benchmark page for model names,
@@ -149,7 +153,7 @@ class COCOEvaluator(object):
                         }
                         result = prepare_for_coco_detection(result) # convert to right format
 
-                        evaluator.update(result)
+                        evaluator.add(result)
 
                         if evaluator.cache_exists:
                             break
@@ -177,7 +181,7 @@ class COCOEvaluator(object):
 
         return False
 
-    def update(self, detections: list):
+    def add(self, detections: list):
         """
         Update the evaluator with new detections
 
@@ -196,7 +200,7 @@ class COCOEvaluator(object):
 
             .. code-block:: python
 
-                my_evaluator.update([{'image_id': 397133, 'bbox': [386.1628112792969, 69.48855590820312,
+                my_evaluator.add([{'image_id': 397133, 'bbox': [386.1628112792969, 69.48855590820312,
                 110.14895629882812, 278.2847595214844], 'score': 0.999152421951294, 'category_id': 1}])
         """
 
