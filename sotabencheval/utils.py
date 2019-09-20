@@ -1,6 +1,7 @@
 import hashlib
 import gzip
 import errno
+import numpy as np
 import tarfile
 import zipfile
 import os
@@ -35,6 +36,9 @@ def calculate_batch_hash(output):
     Args:
         output: data to be hashed
     """
+
+    if isinstance(output, np.ndarray):
+        output = np.round(output.cpu().numpy(), 3).tolist()
 
     m = hashlib.sha256()
     m.update(str(output).encode("utf-8"))
