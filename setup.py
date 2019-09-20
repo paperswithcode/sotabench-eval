@@ -1,6 +1,6 @@
 import io
 from setuptools import setup
-from torchbench.version import __version__
+from sotabencheval.version import __version__
 
 name = "sotabencheval"
 author = "Atlas ML"
@@ -38,6 +38,7 @@ setup(
         name,
         "sotabencheval.image_classification",
         "sotabencheval.object_detection",
+        "sotabencheval.semantic_segmentation",
     ],
     include_package_data=True,
     install_requires=get_requirements(),
