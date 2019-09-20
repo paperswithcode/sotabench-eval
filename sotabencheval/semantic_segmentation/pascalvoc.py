@@ -167,6 +167,7 @@ class PASCALVOCEvaluator(object):
         self.results = None
         self.first_batch_processed = False
         self.batch_hash = None
+        self.cached_results = False
 
     @property
     def cache_exists(self):
@@ -215,6 +216,7 @@ class PASCALVOCEvaluator(object):
         cached_res = client.get_results_by_run_hash(self.batch_hash)
         if cached_res:
             self.results = cached_res
+            self.cached_results = True
             print(
                 "No model change detected (using the first batch run "
                 "hash). Will use cached results."
@@ -289,6 +291,9 @@ class PASCALVOCEvaluator(object):
 
         :return: dict with PASCAL VOC metrics
         """
+
+        if self.cached_results:
+            return self.results
 
         self.voc_evaluator = ConfusionMatrix(21)
         self.voc_evaluator.update(self.targets.astype(np.int64), self.outputs.astype(np.int64))

@@ -109,6 +109,7 @@ class COCOEvaluator(object):
         self.results = None
         self.first_batch_processed = False
         self.batch_hash = None
+        self.cached_results = False
 
     def _download(self, annFile):
         if not os.path.isdir(annFile):
@@ -173,6 +174,7 @@ class COCOEvaluator(object):
         cached_res = client.get_results_by_run_hash(self.batch_hash)
         if cached_res:
             self.results = cached_res
+            self.cached_results = True
             print(
                 "No model change detected (using the first batch run "
                 "hash). Will use cached results."
@@ -218,6 +220,9 @@ class COCOEvaluator(object):
 
         :return: dict with COCO AP metrics
         """
+
+        if self.cached_results:
+            return self.results
 
         self.coco_evaluator = CocoEvaluator(self.coco, self.iou_types)
         self.coco_evaluator.update(self.detections)

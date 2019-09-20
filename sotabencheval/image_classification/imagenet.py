@@ -148,6 +148,7 @@ class ImageNetEvaluator(object):
         self.results = None
         self.first_batch_processed = False
         self.batch_hash = None
+        self.cached_results = False
 
     @property
     def cache_exists(self):
@@ -194,6 +195,7 @@ class ImageNetEvaluator(object):
         cached_res = client.get_results_by_run_hash(self.batch_hash)
         if cached_res:
             self.results = cached_res
+            self.cached_results = True
             print(
                 "No model change detected (using the first batch run "
                 "hash). Will use cached results."
@@ -254,6 +256,9 @@ class ImageNetEvaluator(object):
 
         :return: dict with Top 1 and Top 5 Accuracy
         """
+
+        if self.cached_results:
+            return self.results
 
         if set(self.targets.keys()) != set(self.outputs.keys()):
             missing_ids = set(self.targets.keys()) - set(self.outputs.keys())
