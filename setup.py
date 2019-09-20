@@ -1,6 +1,6 @@
 import io
 from setuptools import setup
-from torchbench.version import __version__
+from sotabencheval.version import __version__
 
 name = "sotabencheval"
 author = "Atlas ML"
