@@ -1,3 +1,4 @@
+Cython
 numpy
 pycocotools>=2.0.0
 sotabenchapi>=0.0.13
