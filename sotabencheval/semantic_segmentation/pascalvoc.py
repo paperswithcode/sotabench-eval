@@ -291,7 +291,7 @@ class PASCALVOCEvaluator(object):
         """
 
         self.voc_evaluator = ConfusionMatrix(21)
-        self.voc_evaluator.update(self.targets, self.outputs)
+        self.voc_evaluator.update(self.targets.astype(np.int64), self.outputs.astype(np.int64))
 
         acc_global, acc, iu = self.voc_evaluator.compute()
 
