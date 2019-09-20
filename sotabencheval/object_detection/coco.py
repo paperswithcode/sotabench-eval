@@ -211,7 +211,7 @@ class COCOEvaluator(object):
         self.coco_evaluator.update(detections)
 
         if not self.first_batch_processed:
-            self.batch_hash = calculate_batch_hash(detections)
+            self.batch_hash = calculate_batch_hash(detections + [get_coco_metrics(self.coco_evaluator)])
             self.first_batch_processed = True
 
     def get_results(self):

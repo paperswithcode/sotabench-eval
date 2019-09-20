@@ -281,7 +281,8 @@ class PASCALVOCEvaluator(object):
         self.outputs = np.append(self.outputs, outputs)
 
         if not self.first_batch_processed:
-            self.batch_hash = calculate_batch_hash(targets + outputs)
+            acc_global, acc, iu = self.voc_evaluator.compute()
+            self.batch_hash = calculate_batch_hash(targets + outputs + [acc_global, acc, iu])
             self.first_batch_processed = True
 
     def get_results(self):
