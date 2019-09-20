@@ -38,7 +38,7 @@ def calculate_batch_hash(output):
     """
 
     if isinstance(output, np.ndarray):
-        output = np.round(output.cpu().numpy(), 3).tolist()
+        output = np.round(output, 3).tolist()
 
     m = hashlib.sha256()
     m.update(str(output).encode("utf-8"))
