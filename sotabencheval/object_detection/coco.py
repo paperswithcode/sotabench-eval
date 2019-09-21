@@ -115,14 +115,16 @@ class COCOEvaluator(object):
         if not os.path.isdir(annFile):
             if "2017" in annFile:
                 annotations_dir_zip = os.path.join(
-                    up(up(annFile)), "annotations_train%s2017.zip" % self.split
+                    self.root, "annotations_train%s2017.zip" % self.split
                 )
             elif "2014" in annFile:
                 annotations_dir_zip = os.path.join(
-                    up(up(annFile)), "annotations_train%s2014.zip" % self.split
+                    self.root, "annotations_train%s2014.zip" % self.split
                 )
             else:
                 annotations_dir_zip = None
+
+            print('Attempt to extract annotations file at {zip_loc}'.format(zip_loc=annotations_dir_zip))
 
             if (annotations_dir_zip is not None and os.path.isfile(annotations_dir_zip)):
                 extract_archive(from_path=annotations_dir_zip, to_path=up(self.root))
