@@ -56,6 +56,19 @@ def change_root_if_server(root, server_root):
     return root
 
 
+def is_server():
+    """
+    If true, uses env variable SOTABENCH_SERVER to determine whether code is being run on the server
+
+    You can use this function for your control flow for server specific settings - e.g. the data paths.
+    :return:
+    """
+    if os.environ.get("SOTABENCH_SERVER") == 'true':
+        return True
+    else:
+        return False
+
+
 # below utilities are taken from the torchvision repository
 
 
