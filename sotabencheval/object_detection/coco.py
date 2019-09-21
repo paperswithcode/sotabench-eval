@@ -124,10 +124,9 @@ class COCOEvaluator(object):
             else:
                 annotations_dir_zip = None
 
-            print('Attempt to extract annotations file at {zip_loc}'.format(zip_loc=annotations_dir_zip))
-
-            if (annotations_dir_zip is not None and os.path.isfile(annotations_dir_zip)):
-                extract_archive(from_path=annotations_dir_zip, to_path=up(self.root))
+            if annotations_dir_zip is not None:
+                print('Attempt to extract annotations file at {zip_loc}'.format(zip_loc=annotations_dir_zip))
+                extract_archive(from_path=annotations_dir_zip, to_path=self.root)
 
     @property
     def cache_exists(self):
