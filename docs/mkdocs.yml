@@ -1,3 +1,8 @@
-site_name: My Docs
+site_name: sotabencheval Docs
 theme:
   name: 'material'
+  palette:
+    primary: 'cyan'
+    accent: 'cyan'
+markdown_extensions:
+  - codehilite
