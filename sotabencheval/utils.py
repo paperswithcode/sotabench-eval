@@ -1,7 +1,6 @@
 import hashlib
 import gzip
 import errno
-import numpy as np
 import tarfile
 import zipfile
 import os

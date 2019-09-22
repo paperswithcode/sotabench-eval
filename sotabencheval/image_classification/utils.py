@@ -1,7 +1,14 @@
 import numpy as np
 
 def top_k_accuracy_score(y_true, y_pred, k=5, normalize=True):
-    """Top k Accuracy classification score."""
+    """
+     Top k Accuracy classification score.
+    :param y_true: the true labels (np.ndarray)
+    :param y_pred: the predicted labels (np.ndarray)
+    :param k: calculates top k accuracy (int)
+    :param normalize: whether to normalize by the number of observations
+    :return: the top k accuracy
+    """
 
     if len(y_true.shape) == 2:
         y_true = y_true[0] # should be one-dimensional

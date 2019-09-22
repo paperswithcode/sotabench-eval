@@ -1,3 +1,5 @@
+# Some of the processing logic here is based on the torchvision ImageNet dataset
+
 import numpy as np
 import os
 import pickle
@@ -7,7 +9,7 @@ from sotabenchapi.core import BenchmarkResult, check_inputs
 import tqdm
 
 from sotabencheval.utils import AverageMeter, calculate_batch_hash, download_url, change_root_if_server
-from .utils import top_k_accuracy_score
+from sotabencheval.image_classification.utils import top_k_accuracy_score
 
 ARCHIVE_DICT = {
     'labels': {
@@ -18,7 +20,7 @@ ARCHIVE_DICT = {
 
 
 class ImageNetEvaluator(object):
-    """`ImageNet <https://www.sotabench.com/benchmark/imagenet>`_ benchmark.
+    """`ImageNet <https://sotabench.com/benchmarks/image-classification-on-imagenet>`_ benchmark.
 
     Examples:
         Evaluate a ResNeXt model from the torchvision repository:
@@ -28,11 +30,17 @@ class ImageNetEvaluator(object):
             import numpy as np
             import PIL
             import torch
-            from sotabencheval.image_classification import ImageNetEvaluator
             from torchvision.models.resnet import resnext101_32x8d
             import torchvision.transforms as transforms
             from torchvision.datasets import ImageNet
             from torch.utils.data import DataLoader
+
+            from sotabencheval.image_classification import ImageNetEvaluator
+
+            if is_server():
+                DATA_ROOT = './.data/vision/imagenet'
+            else: # local settings
+                DATA_ROOT = '/home/ubuntu/my_data/'
 
             model = resnext101_32x8d(pretrained=True)
 
@@ -49,7 +57,7 @@ class ImageNetEvaluator(object):
             ])
 
             test_dataset = ImageNet(
-                './data',
+                DATA_ROOT,
                 split="val",
                 transform=input_transform,
                 target_transform=None,
@@ -68,7 +76,7 @@ class ImageNetEvaluator(object):
             model.eval()
 
             evaluator = ImageNetEvaluator(
-                             paper_model_name='ResNeXt-101-32x8d',
+                             model_name='ResNeXt-101-32x8d',
                              paper_arxiv_id='1611.05431')
 
             with torch.no_grad():
@@ -81,7 +89,10 @@ class ImageNetEvaluator(object):
 
                     evaluator.add(dict(zip(image_ids, list(output.cpu().numpy()))))
 
-            print(evaluator.get_results())
+                    if evaluator.cache_exists:
+                        break
+
+            print(evaluator.get_results()) # print results of evaluation
 
             evaluator.save()
     """
@@ -90,28 +101,28 @@ class ImageNetEvaluator(object):
 
     def __init__(self,
                  root: str = '.',
-                 paper_model_name: str = None,
+                 model_name: str = None,
                  paper_arxiv_id: str = None,
                  paper_pwc_id: str = None,
                  paper_results: dict = None,
-                 pytorch_hub_url: str = None,
                  model_description=None,):
         """Benchmarking function.
 
         Args:
-            root (string): Root directory of the ImageNet Dataset.
-            paper_model_name (str, optional): The name of the model from the
-                paper - if you want to link your build to a machine learning
-                paper. See the ImageNet benchmark page for model names,
-                https://www.sotabench.com/benchmark/imagenet, e.g. on the paper
-                leaderboard tab.
-            paper_arxiv_id (str, optional): Optional linking to ArXiv if you
+            root (string): Root directory of the ImageNet Dataset - where the
+            label data is located (or will be downloaded to).
+            model_name (str, optional): The name of the model from the
+                paper - if you want to link your build to a model from a
+                machine learning paper. See the ImageNet benchmark page for model names,
+                https://sotabench.com/benchmarks/image-classification-on-imagenet, e.g.
+                on the paper leaderboard tab.
+            paper_arxiv_id (str, optional): Optional linking to arXiv if you
                 want to link to papers on the leaderboard; put in the
-                corresponding paper's ArXiv ID, e.g. '1611.05431'.
+                corresponding paper's arXiv ID, e.g. '1611.05431'.
             paper_pwc_id (str, optional): Optional linking to Papers With Code;
                 put in the corresponding papers with code URL slug, e.g.
                 'u-gat-it-unsupervised-generative-attentional'
-            paper_results (dict, optional) : If the paper you are reproducing
+            paper_results (dict, optional) : If the paper model you are reproducing
                 does not have model results on sotabench.com, you can specify
                 the paper results yourself through this argument, where keys
                 are metric names, values are metric values. e.g::
@@ -121,9 +132,6 @@ class ImageNetEvaluator(object):
                 Ensure that the metric names match those on the sotabench
                 leaderboard - for ImageNet it should be 'Top 1 Accuracy' and
                 'Top 5 Accuracy'.
-            pytorch_hub_url (str, optional): Optional linking to PyTorch Hub
-                url if your model is linked there; e.g:
-                'nvidia_deeplearningexamples_waveglow'.
             model_description (str, optional): Optional model description.
         """
 
@@ -131,11 +139,10 @@ class ImageNetEvaluator(object):
             root=root,
             server_root="./.data/vision/imagenet"))
 
-        self.paper_model_name = paper_model_name
+        self.model_name = model_name
         self.paper_arxiv_id = paper_arxiv_id
         self.paper_pwc_id = paper_pwc_id
         self.paper_results = paper_results
-        self.pytorch_hub_url = pytorch_hub_url
         self.model_description = model_description
 
         self.top1 = AverageMeter()
@@ -160,7 +167,7 @@ class ImageNetEvaluator(object):
         same model twice.
 
         Examples:
-            Breaking a for loop
+            Breaking a for loop for a PyTorch evaluation
 
             .. code-block:: python
 
@@ -179,7 +186,7 @@ class ImageNetEvaluator(object):
                         if evaluator.cache_exists:
                             break
 
-                evaluator.save()
+                evaluator.save()  # uses the cached results
 
         :return:
         """
@@ -187,7 +194,7 @@ class ImageNetEvaluator(object):
         if not self.first_batch_processed:
             raise ValueError('No batches of data have been processed so no batch_hash exists')
 
-        if not in_check_mode():
+        if not in_check_mode():  # we only check the cache on the server
             return None
 
         client = Client.public()
@@ -206,7 +213,8 @@ class ImageNetEvaluator(object):
     def load_targets(self):
         """
         Downloads ImageNet labels and IDs and puts into self.root, then loads at self.targets
-        :return:
+        :return: void - update self.targets with the ImageNet validation data labels, and downloads if
+        the pickled validation data is not in the root location
         """
         download_url(
             url=ARCHIVE_DICT['labels']['url'],
@@ -218,8 +226,7 @@ class ImageNetEvaluator(object):
 
     def add(self, output_dict: dict):
         """
-        Update the evaluator with new results
-
+        Updates the evaluator with new results
 
         :param output_dict (dict): Where keys are image IDs, and each value should be an 1D np.ndarray of size 1000
         containing logits for that image ID.
@@ -296,7 +303,7 @@ class ImageNetEvaluator(object):
 
     def save(self):
         """
-        Calculate results and then put into a BenchmarkResult object
+        Calculate results and then puts into a BenchmarkResult object
 
         On the sotabench.com server, this will produce a JSON file serialisation and results will be recorded
         on the platform.
@@ -312,8 +319,7 @@ class ImageNetEvaluator(object):
             config={},
             dataset='ImageNet',
             results=self.results,
-            pytorch_hub_id=self.pytorch_hub_url,
-            model=self.paper_model_name,
+            model=self.model_name,
             model_description=self.model_description,
             arxiv_id=self.paper_arxiv_id,
             pwc_id=self.paper_pwc_id,

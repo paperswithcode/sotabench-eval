@@ -1,3 +1,5 @@
+# Some of the processing logic here is based on the torchvision PASCAL VOC dataset
+
 import numpy as np
 import os
 from sotabenchapi.check import in_check_mode
@@ -49,7 +51,7 @@ DATASET_YEAR_DICT = {
 
 
 class PASCALVOCEvaluator(object):
-    """`PASCAL VOC <https://www.sotabench.com/benchmark/pascalvoc2012>`_ benchmark.
+    """`PASCAL VOC <https://sotabench.com/benchmarks/semantic-segmentation-on-pascal-voc-2012>`_ benchmark.
 
     Examples:
         Evaluate a FCN model from the torchvision repository:
@@ -58,17 +60,17 @@ class PASCALVOCEvaluator(object):
 
             ...
 
-            evaluator = PASCALVOCEvaluator(
-                             paper_model_name='FCN ResNet-101',
-                             paper_arxiv_id='1605.06211')
+            evaluator = PASCALVOCEvaluator(model_name='FCN ResNet-101', paper_arxiv_id='1605.06211')
 
             with torch.no_grad():
                 for i, (input, target) in enumerate(iterator):
-                    input, target = send_data_to_device(input, target, device=device)
+                    ...
                     output = model(input)
-                    output, target = model_output_transform(output, target)
-
+                    # output and target should then be flattened into 1D np.ndarrays and passed in below
                     evaluator.update(output=output, target=target)
+
+                    if evaluator.cache_exists:
+                        break
 
             evaluator.save()
     """
@@ -79,27 +81,27 @@ class PASCALVOCEvaluator(object):
                  root: str = '.',
                  split: str = "val",
                  dataset_year: str = "2012",
-                 paper_model_name: str = None,
+                 model_name: str = None,
                  paper_arxiv_id: str = None,
                  paper_pwc_id: str = None,
                  paper_results: dict = None,
-                 pytorch_hub_url: str = None,
                  model_description=None,
                  download: bool = False):
         """Benchmarking function.
 
         Args:
-            root (string): Root directory of the PASCAL VOC Dataset.
+            root (string): Root directory of the PASCAL VOC Dataset - where the raw
+            data should be located (or will be downloaded to)
             split (str) : the split for PASCAL VOC to use, e.g. 'val'
             dataset_year (str): the dataset year for PASCAL VOC to use
-            paper_model_name (str, optional): The name of the model from the
+            model_name (str, optional): The name of the model from the
                 paper - if you want to link your build to a machine learning
                 paper. See the VOC benchmark page for model names,
-                https://www.sotabench.com/benchmark/pascalvoc2012, e.g. on the
-                paper leaderboard tab.
-            paper_arxiv_id (str, optional): Optional linking to ArXiv if you
+                https://sotabench.com/benchmarks/semantic-segmentation-on-pascal-voc-2012,
+                e.g. on the paper leaderboard tab.
+            paper_arxiv_id (str, optional): Optional linking to arXiv if you
                 want to link to papers on the leaderboard; put in the
-                corresponding paper's ArXiv ID, e.g. '1611.05431'.
+                corresponding paper's arXiv ID, e.g. '1611.05431'.
             paper_pwc_id (str, optional): Optional linking to Papers With Code;
                 put in the corresponding papers with code URL slug, e.g.
                 'u-gat-it-unsupervised-generative-attentional'
@@ -112,9 +114,6 @@ class PASCALVOCEvaluator(object):
 
                 Ensure that the metric names match those on the sotabench
                 leaderboard - for PASCAL VOC it should be 'Mean IOU', 'Accuracy'
-            pytorch_hub_url (str, optional): Optional linking to PyTorch Hub
-                url if your model is linked there; e.g:
-                'nvidia_deeplearningexamples_waveglow'.
             model_description (str, optional): Optional model description.
             download (bool) : whether to download the data or not
         """
@@ -122,11 +121,10 @@ class PASCALVOCEvaluator(object):
         root = self.root = change_root_if_server(root=root,
                                                  server_root="./.data/vision/voc%s" % dataset_year)
 
-        self.paper_model_name = paper_model_name
+        self.model_name = model_name
         self.paper_arxiv_id = paper_arxiv_id
         self.paper_pwc_id = paper_pwc_id
         self.paper_results = paper_results
-        self.pytorch_hub_url = pytorch_hub_url
         self.model_description = model_description
         self.dataset_year = dataset_year
         self.split = split
@@ -188,15 +186,10 @@ class PASCALVOCEvaluator(object):
 
                 with torch.no_grad():
                     for i, (input, target) in enumerate(iterator):
-                        input, target = send_data_to_device(input, target, device=device)
-                        original_output = model(input)
-                        output, target = model_output_transform(original_output, target)
-                        result = {
-                            tar["image_id"].item(): out for tar, out in zip(target, output)
-                        }
-                        result = prepare_for_coco_detection(result) # convert to right format
-
-                        evaluator.add(result)
+                        ...
+                        output = model(input)
+                        # output and target should then be flattened into 1D np.ndarrays and passed in below
+                        evaluator.update(output=output, target=target)
 
                         if evaluator.cache_exists:
                             break
@@ -328,8 +321,7 @@ class PASCALVOCEvaluator(object):
             config={},
             dataset='PASCAL VOC %s' % self.dataset_year,
             results=self.results,
-            pytorch_hub_id=self.pytorch_hub_url,
-            model=self.paper_model_name,
+            model=self.model_name,
             model_description=self.model_description,
             arxiv_id=self.paper_arxiv_id,
             pwc_id=self.paper_pwc_id,

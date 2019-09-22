@@ -1,5 +1,6 @@
+# Some of the processing logic here is based on the torchvision COCO dataset
+
 import os
-from os.path import dirname as up
 from pycocotools.coco import COCO
 from sotabenchapi.check import in_check_mode
 from sotabenchapi.client import Client
@@ -11,7 +12,7 @@ from sotabencheval.object_detection.utils import get_coco_metrics
 
 
 class COCOEvaluator(object):
-    """`COCO <https://www.sotabench.com/benchmark/coco>`_ benchmark.
+    """`COCO <https://sotabench.com/benchmarks/object-detection-on-coco-minival>`_ benchmark.
 
     Examples:
         Evaluate a ResNeXt model from the torchvision repository:
@@ -20,21 +21,17 @@ class COCOEvaluator(object):
 
             ...
 
-            evaluator = COCOEvaluator(
-                             paper_model_name='Mask R-CNN',
-                             paper_arxiv_id='1703.06870')
+            evaluator = COCOEvaluator(model_name='Mask R-CNN', paper_arxiv_id='1703.06870')
 
             with torch.no_grad():
-                for i, (input, target) in enumerate(iterator):
-                    input, target = send_data_to_device(input, target, device=device)
-                    original_output = model(input)
-                    output, target = model_output_transform(original_output, target)
-                    result = {
-                        tar["image_id"].item(): out for tar, out in zip(target, output)
-                    }
-                    result = prepare_for_coco_detection(result) # convert to right format
+                for i, (input, __) in enumerate(iterator):
+                    ...
+                    output = model(input)
+                    # optional formatting of output here to be a list of detection dicts
+                    evaluator.add(output)
 
-                    evaluator.add(result)
+                    if evaluator.cache_exists:
+                        break
 
             evaluator.save()
     """
@@ -45,26 +42,26 @@ class COCOEvaluator(object):
                  root: str = '.',
                  split: str = "val",
                  dataset_year: str = "2017",
-                 paper_model_name: str = None,
+                 model_name: str = None,
                  paper_arxiv_id: str = None,
                  paper_pwc_id: str = None,
                  paper_results: dict = None,
-                 pytorch_hub_url: str = None,
                  model_description=None,):
         """Benchmarking function.
 
         Args:
-            root (string): Root directory of the COCO Dataset.
+            root (string): Root directory of the COCO Dataset - where the
+            label data is located (or will be downloaded to).
             split (str) : the split for COCO to use, e.g. 'val'
             dataset_year (str): the dataset year for COCO to use
-            paper_model_name (str, optional): The name of the model from the
+            model_name (str, optional): The name of the model from the
                 paper - if you want to link your build to a machine learning
                 paper. See the COCO benchmark page for model names,
-                https://www.sotabench.com/benchmark/coco, e.g. on the paper
-                leaderboard tab.
-            paper_arxiv_id (str, optional): Optional linking to ArXiv if you
+                https://sotabench.com/benchmarks/object-detection-on-coco-minival,
+                e.g. on the paper leaderboard tab.
+            paper_arxiv_id (str, optional): Optional linking to arXiv if you
                 want to link to papers on the leaderboard; put in the
-                corresponding paper's ArXiv ID, e.g. '1611.05431'.
+                corresponding paper's arXiv ID, e.g. '1611.05431'.
             paper_pwc_id (str, optional): Optional linking to Papers With Code;
                 put in the corresponding papers with code URL slug, e.g.
                 'u-gat-it-unsupervised-generative-attentional'
@@ -78,20 +75,16 @@ class COCOEvaluator(object):
                 Ensure that the metric names match those on the sotabench
                 leaderboard - for COCO it should be 'box AP', 'AP50',
                 'AP75', 'APS', 'APM', 'APL'
-            pytorch_hub_url (str, optional): Optional linking to PyTorch Hub
-                url if your model is linked there; e.g:
-                'nvidia_deeplearningexamples_waveglow'.
             model_description (str, optional): Optional model description.
         """
 
         root = self.root = change_root_if_server(root=root,
                                                  server_root="./.data/vision/coco")
 
-        self.paper_model_name = paper_model_name
+        self.model_name = model_name
         self.paper_arxiv_id = paper_arxiv_id
         self.paper_pwc_id = paper_pwc_id
         self.paper_results = paper_results
-        self.pytorch_hub_url = pytorch_hub_url
         self.model_description = model_description
         self.split = split
 
@@ -147,15 +140,10 @@ class COCOEvaluator(object):
 
                 with torch.no_grad():
                     for i, (input, target) in enumerate(iterator):
-                        input, target = send_data_to_device(input, target, device=device)
-                        original_output = model(input)
-                        output, target = model_output_transform(original_output, target)
-                        result = {
-                            tar["image_id"].item(): out for tar, out in zip(target, output)
-                        }
-                        result = prepare_for_coco_detection(result) # convert to right format
-
-                        evaluator.add(result)
+                        ...
+                        output = model(input)
+                        # optional formatting of output here to be a list of detection dicts
+                        evaluator.add(output)
 
                         if evaluator.cache_exists:
                             break
@@ -168,7 +156,7 @@ class COCOEvaluator(object):
         if not self.first_batch_processed:
             raise ValueError('No batches of data have been processed so no batch_hash exists')
 
-        if not in_check_mode():
+        if not in_check_mode():  # we only check the cache on the server
             return None
 
         client = Client.public()
@@ -256,8 +244,7 @@ class COCOEvaluator(object):
             config={},
             dataset='COCO minival',
             results=self.results,
-            pytorch_hub_id=self.pytorch_hub_url,
-            model=self.paper_model_name,
+            model=self.model_name,
             model_description=self.model_description,
             arxiv_id=self.paper_arxiv_id,
             pwc_id=self.paper_pwc_id,
