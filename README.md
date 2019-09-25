@@ -10,6 +10,10 @@ Requires Python 3.6+.
 pip install sotabench-eval
 ```
 
+## Documentation
+
+You can access the [full documentation here](https://paperswithcode.github.io/sotabench-eval/index.html).
+
 ## Contributing
 
 All contributions welcome!
