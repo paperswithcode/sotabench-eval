@@ -5,4 +5,5 @@ theme:
     primary: 'cyan'
     accent: 'cyan'
 markdown_extensions:
+  - admonition
   - codehilite

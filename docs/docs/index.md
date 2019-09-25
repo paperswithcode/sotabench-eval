@@ -8,9 +8,12 @@ benchmark your models. It can be used in conjunction with the
 can compare model performance on different tasks, as well as a continuous integration style
 service for your repository to benchmark your models on each commit.
 
-**sotabencheval** is a general benchmarking library, meaning it is designed to support all deep learning frameworks, 
-and requires minimal code integration. There are alternative sotabench APIs you can use that are
-specialized for particular frameworks, e.g. [torchbench](https://github.com/paperswithcode/torchbench) for PyTorch.
+!!! Note
+    **sotabencheval** is a general benchmarking library, meaning it is designed to support all deep learning frameworks, 
+    and requires minimal code integration. There are alternative sotabench APIs you can use that are
+    specialized for particular frameworks, e.g. [torchbench](https://github.com/paperswithcode/torchbench) for PyTorch.
+
+
 
 
 ## Getting Started : Benchmarking on ImageNet
@@ -118,7 +121,23 @@ python sotabench.py
 
 You can also run the logic in a Jupyter Notebook if that is your preferred workflow.
 
+To verify your benchmark will run and all parameters are correct you can use the included CLI checking tool:
+
+```
+$ sb check
+```
+
 **Step Three : Login and connect your repository to [sotabench](http://www.sotabench.com)**
+
+Create an account on [sotabench](http://www.sotabench.com), then head to your user page. Click the
+**Connect a GitHub repository** button:
+
+![SotaBench](img/connect.png)
+
+Then follow the steps to connect the repositories that you wish to benchmark:
+
+![SotaBench](img/connect2.png)
+
 
 After you connect your repository, the sotabench servers will re-evaluate your model on every commit, 
 to ensure the model is working and results are up-to-date - including if you add additional models to the benchmark file.
