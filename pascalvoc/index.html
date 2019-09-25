@@ -487,7 +487,16 @@ pixels - so the model is correct.</p>
 <p>You can do this all at once in a single call to <code>add()</code>, but more naturally, you will 
 probably loop over the dataset and call the method for the outputs of each batch.
 That would like something like this (for a PyTorch example):</p>
-<div class="codehilite"><pre><span></span><span class="n">PYTHON</span> <span class="n">CODE</span> <span class="n">HERE</span>
+<div class="codehilite"><pre><span></span><span class="n">evaluator</span> <span class="o">=</span> <span class="n">PASCALVOCEvaluator</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">DATA_ROOT</span><span class="p">,</span> <span class="n">dataset_year</span><span class="o">=</span><span class="s1">&#39;2012&#39;</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="s1">&#39;val&#39;</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;FCN (ResNet-101)&#39;</span><span class="p">,</span>
+                              <span class="n">paper_arxiv_id</span><span class="o">=</span><span class="s1">&#39;1605.06211&#39;</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">image</span><span class="p">,</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="n">data_loader_test</span><span class="p">):</span>
+        <span class="n">image</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">),</span> <span class="n">target</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="s1">&#39;out&#39;</span><span class="p">]</span>
+
+        <span class="n">evaluator</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">target</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
 </pre></div>
 
 
