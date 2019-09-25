@@ -200,7 +200,7 @@ model = model.cuda()
 model.eval()
 
 evaluator = ImageNetEvaluator(
-                 paper_model_name='ResNeXt-101-32x8d',
+                 model_name='ResNeXt-101-32x8d',
                  paper_arxiv_id='1611.05431')
 
 def get_img_id(image_name):

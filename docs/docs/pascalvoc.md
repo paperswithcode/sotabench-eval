@@ -71,7 +71,7 @@ The above will directly compare with the result of the paper when run on the ser
 
 The evaluator object has an `.add()` method to submit predictions by batch or in full.
 
-For PASCAL there are two required arguments: `outputs`, a 1D np.ndarray of semantic class predictions per lagbl, 
+For PASCAL there are two required arguments: `outputs`, a 1D np.ndarray of semantic class predictions per label, 
 and `targets`, a 1D np.ndarray of ground truth semantic classes per pixel. In other words, it requires flattened
 inputs and outputs.
 
@@ -153,7 +153,20 @@ You can include hashing within an evaluation loop like follows (in the following
 example for a PyTorch repository):
 
 ``` python
-PYTHON CODE HERE
+evaluator = PASCALVOCEvaluator(root='./data', dataset_year='2012', split='val', model_name='FCN (ResNet-101)',
+                              paper_arxiv_id='1605.06211')
+
+with torch.no_grad():
+    for image, target in tqdm.tqdm(data_loader_test):
+        image, target = image.to('cuda'), target.to('cuda')
+        output = model(image)
+        output = output['out']
+
+        evaluator.add(output.argmax(1).flatten().cpu().numpy(), target.flatten().cpu().numpy())
+        if evaluator.cache_exists:
+            break
+
+evaluator.save()
 ```
 
 If the hash is the same as in the server, we infer that the model hasn't changed, so
@@ -164,7 +177,77 @@ multiple models, as it speeds up evaluation significantly.
     
 ## A full sotabench.py example
 
-To do...(torchvision example)
+Below we show an implementation for a model from the torchvision repository. This
+incorporates all the features explained above: (a) using the server data root, 
+(b) using the ImageNet Evaluator, and (c) caching the evaluation logic:
+
+``` python
+import PIL
+import torch
+import torchvision
+from torchvision.models.segmentation import fcn_resnet101
+import torchvision.transforms as transforms
+import tqdm
+
+from sotabench_transforms import Normalize, Compose, Resize, ToTensor
+
+from sotabencheval.semantic_segmentation import PASCALVOCEvaluator
+from sotabencheval.utils import is_server
+
+if is_server():
+    DATA_ROOT = './.data/vision/voc2012'
+else: # local settings
+    DATA_ROOT = '/home/ubuntu/my_data/'
+
+MODEL_NAME = 'fcn_resnet101'
+
+def cat_list(images, fill_value=0):
+    max_size = tuple(max(s) for s in zip(*[img.shape for img in images]))
+    batch_shape = (len(images),) + max_size
+    batched_imgs = images[0].new(*batch_shape).fill_(fill_value)
+    for img, pad_img in zip(images, batched_imgs):
+        pad_img[..., : img.shape[-2], : img.shape[-1]].copy_(img)
+    return batched_imgs
+
+def collate_fn(batch):
+    images, targets = list(zip(*batch))
+    batched_imgs = cat_list(images, fill_value=0)
+    batched_targets = cat_list(targets, fill_value=255)
+    return batched_imgs, batched_targets
+
+device = torch.device('cuda')
+
+normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+my_transforms = Compose([Resize((520, 480)), ToTensor(), normalize])
+
+dataset_test = torchvision.datasets.VOCSegmentation(root=DATA_ROOT, year='2012', image_set="val", 
+                                                    transforms=my_transforms, download=True)
+test_sampler = torch.utils.data.SequentialSampler(dataset_test)
+
+data_loader_test = torch.utils.data.DataLoader(
+    dataset_test, batch_size=32,
+    sampler=test_sampler, num_workers=4,
+    collate_fn=collate_fn)
+
+model = torchvision.models.segmentation.__dict__['fcn_resnet101'](num_classes=21, pretrained=True)
+model.to(device)
+model.eval()
+
+evaluator = PASCALVOCEvaluator(root=DATA_ROOT, dataset_year='2012', split='val', model_name='FCN (ResNet-101)',
+                              paper_arxiv_id='1605.06211')
+
+with torch.no_grad():
+    for image, target in tqdm.tqdm(data_loader_test):
+        image, target = image.to('cuda'), target.to('cuda')
+        output = model(image)
+        output = output['out']
+        
+        evaluator.add(output.argmax(1).flatten().cpu().numpy(), target.flatten().cpu().numpy())
+        if evaluator.cache_exists:
+            break
+        
+evaluator.save()
+```
 
 ## Need More Help?
 
