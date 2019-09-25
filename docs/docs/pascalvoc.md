@@ -122,7 +122,16 @@ probably loop over the dataset and call the method for the outputs of each batch
 That would like something like this (for a PyTorch example):
 
 ``` python
-PYTHON CODE HERE
+evaluator = PASCALVOCEvaluator(root=DATA_ROOT, dataset_year='2012', split='val', model_name='FCN (ResNet-101)',
+                              paper_arxiv_id='1605.06211')
+
+with torch.no_grad():
+    for image, target in tqdm.tqdm(data_loader_test):
+        image, target = image.to('cuda'), target.to('cuda')
+        output = model(image)
+        output = output['out']
+        
+        evaluator.add(output.argmax(1).flatten().cpu().numpy(), target.flatten().cpu().numpy())
 ```
 
 When you are done, you can get the results locally by running:
