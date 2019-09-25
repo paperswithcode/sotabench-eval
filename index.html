@@ -337,9 +337,12 @@ benchmark your models. It can be used in conjunction with the
 <a href="http://www.sotabench.com">sotabench</a> website to record results for models, so the community
 can compare model performance on different tasks, as well as a continuous integration style
 service for your repository to benchmark your models on each commit.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
 <p><strong>sotabencheval</strong> is a general benchmarking library, meaning it is designed to support all deep learning frameworks, 
 and requires minimal code integration. There are alternative sotabench APIs you can use that are
 specialized for particular frameworks, e.g. <a href="https://github.com/paperswithcode/torchbench">torchbench</a> for PyTorch.</p>
+</div>
 <h2 id="getting-started-benchmarking-on-imagenet">Getting Started : Benchmarking on ImageNet</h2>
 <p><strong>Step One : Create a sotabench.py file in the root of your repository</strong></p>
 <p>This can contain whatever logic you need to load and process the dataset, and to 
@@ -437,7 +440,17 @@ to test one of its models, integrating the evaluation code from above:</p>
 
 
 <p>You can also run the logic in a Jupyter Notebook if that is your preferred workflow.</p>
+<p>To verify your benchmark will run and all parameters are correct you can use the included CLI checking tool:</p>
+<div class="codehilite"><pre><span></span>$ sb check
+</pre></div>
+
+
 <p><strong>Step Three : Login and connect your repository to <a href="http://www.sotabench.com">sotabench</a></strong></p>
+<p>Create an account on <a href="http://www.sotabench.com">sotabench</a>, then head to your user page. Click the
+<strong>Connect a GitHub repository</strong> button:</p>
+<p><img alt="SotaBench" src="img/connect.png" /></p>
+<p>Then follow the steps to connect the repositories that you wish to benchmark:</p>
+<p><img alt="SotaBench" src="img/connect2.png" /></p>
 <p>After you connect your repository, the sotabench servers will re-evaluate your model on every commit, 
 to ensure the model is working and results are up-to-date - including if you add additional models to the benchmark file.</p>
 <h2 id="installation">Installation</h2>
