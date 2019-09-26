@@ -7,27 +7,52 @@ from sotabencheval.utils import calculate_batch_hash
 from sotabencheval.semantic_segmentation.utils import ConfusionMatrix
 
 
-class PASCALVOCEvaluator(object):
-    """`PASCAL VOC <https://sotabench.com/benchmarks/semantic-segmentation-on-pascal-voc-2012-val>`_ benchmark.
+class ADE20KEvaluator(object):
+    """`ADE20K <https://sotabench.com/benchmarks/semantic-segmentation-on-ade20k-val>`_ benchmark.
 
     Examples:
-        Evaluate a FCN model from the torchvision repository:
+        Evaluate a HRNetV2 model from the CSAILVision repository
 
         .. code-block:: python
 
             ...
 
-            evaluator = PASCALVOCEvaluator(model_name='FCN ResNet-101', paper_arxiv_id='1605.06211')
+            evaluator = ADE20KEvaluator(model_name='HRNetV2 (HRNetV2-W48)', paper_arxiv_id='1904.04514')
 
-            with torch.no_grad():
-                for i, (input, target) in enumerate(iterator):
-                    ...
-                    output = model(input)
-                    # output and target should then be flattened into 1D np.ndarrays and passed in below
-                    evaluator.update(output=output, target=target)
+            for batch_data in loader:
+                # process data
+                batch_data = batch_data[0]
+                seg_label = as_numpy(batch_data['seg_label'][0])
+                img_resized_list = batch_data['img_data']
 
-                    if evaluator.cache_exists:
-                        break
+                torch.cuda.synchronize()
+                tic = time.perf_counter()
+                with torch.no_grad():
+                    segSize = (seg_label.shape[0], seg_label.shape[1])
+                    scores = torch.zeros(1, cfg.DATASET.num_class, segSize[0], segSize[1])
+                    scores = async_copy_to(scores, gpu)
+
+                    for img in img_resized_list:
+                        feed_dict = batch_data.copy()
+                        feed_dict['img_data'] = img
+                        del feed_dict['img_ori']
+                        del feed_dict['info']
+                        feed_dict = async_copy_to(feed_dict, gpu)
+
+                        # forward pass
+                        scores_tmp = segmentation_module(feed_dict, segSize=segSize)
+                        scores = scores + scores_tmp / len(cfg.DATASET.imgSizes)
+
+                    _, pred = torch.max(scores, dim=1)
+                    pred = as_numpy(pred.squeeze(0).cpu())
+
+                torch.cuda.synchronize()
+
+                evaluator.update(output=pred.flatten().cpu().numpy(),
+                    target=seg_label.flatten().cpu().numpy())
+
+                if evaluator.cache_exists:
+                    break
 
             evaluator.save()
     """
@@ -45,8 +70,8 @@ class PASCALVOCEvaluator(object):
         Args:
             model_name (str, optional): The name of the model from the
                 paper - if you want to link your build to a machine learning
-                paper. See the VOC benchmark page for model names,
-                https://sotabench.com/benchmarks/semantic-segmentation-on-pascal-voc-2012-val,
+                paper. See the ADE20K benchmark page for model names,
+                https://sotabench.com/benchmarks/semantic-segmentation-on-ade20k-val,
                 e.g. on the paper leaderboard tab.
             paper_arxiv_id (str, optional): Optional linking to arXiv if you
                 want to link to papers on the leaderboard; put in the
@@ -59,11 +84,12 @@ class PASCALVOCEvaluator(object):
                 the paper results yourself through this argument, where keys
                 are metric names, values are metric values. e.g::
 
-                    {'Mean IOU': 76.42709, 'Accuracy': 95.31, ...}.
+                    {'mIOU': 0.4566, 'Accuracy': 0.543}.
 
                 Ensure that the metric names match those on the sotabench
-                leaderboard - for PASCAL VOC it should be 'Mean IOU', 'Accuracy'
+                leaderboard - for ADE20K it should be 'mIOU', 'Accuracy'
             model_description (str, optional): Optional model description.
+            download (bool) : whether to download the data or not
         """
 
         self.model_name = model_name
@@ -72,7 +98,7 @@ class PASCALVOCEvaluator(object):
         self.paper_results = paper_results
         self.model_description = model_description
 
-        self.voc_evaluator = ConfusionMatrix(21)
+        self.ade20k_evaluator = ConfusionMatrix(150)
 
         self.outputs = np.array([])
         self.targets = np.array([])
@@ -147,7 +173,7 @@ class PASCALVOCEvaluator(object):
         The shape of your outputs might look like this:
 
         batch_output.shape
-        >> (32, 21, 520, 480) # where 21 is the number of VOC classes
+        >> (32, 21, 520, 480) # where 21 is the number of ADE20K classes
 
         batch_target.shape
         >> (32, 520, 480)
@@ -180,16 +206,16 @@ class PASCALVOCEvaluator(object):
                                         targets=flattened_batch_target)
 
 
-        :return: void - updates self.voc_evaluator with the data, and updates self.targets and self.outputs
+        :return: void - updates self.ade20k_evaluator with the data, and updates self.targets and self.outputs
         """
 
-        self.voc_evaluator.update(targets, outputs)
+        self.ade20k_evaluator.update(targets, outputs)
 
         self.targets = np.append(self.targets, targets)
         self.outputs = np.append(self.outputs, outputs)
 
         if not self.first_batch_processed:
-            acc_global, acc, iu = self.voc_evaluator.compute()
+            acc_global, acc, iu = self.ade20k_evaluator.compute()
             self.batch_hash = calculate_batch_hash(np.append(
                 np.append(np.around(targets, 3), np.around(outputs, 3)),
                 np.around(np.array([acc_global.item(), iu.mean().item()]), 3)))
@@ -197,19 +223,19 @@ class PASCALVOCEvaluator(object):
 
     def get_results(self):
         """
-        Reruns the evaluation using the accumulated detections, returns VOC results with IOU and
+        Reruns the evaluation using the accumulated detections, returns ADE20K results with IOU and
         Accuracy metrics
 
-        :return: dict with PASCAL VOC metrics
+        :return: dict with ADE20K metrics
         """
 
         if self.cached_results:
             return self.results
 
-        self.voc_evaluator = ConfusionMatrix(21)
-        self.voc_evaluator.update(self.targets.astype(np.int64), self.outputs.astype(np.int64))
+        self.ade20k_evaluator = ConfusionMatrix(150)
+        self.ade20k_evaluator.update(self.targets.astype(np.int64), self.outputs.astype(np.int64))
 
-        acc_global, acc, iu = self.voc_evaluator.compute()
+        acc_global, acc, iu = self.ade20k_evaluator.compute()
 
         self.results = {
                    "Accuracy": acc_global.item(),
@@ -234,7 +260,7 @@ class PASCALVOCEvaluator(object):
         return BenchmarkResult(
             task=self.task,
             config={},
-            dataset='PASCAL VOC 2012 val',
+            dataset='ADE20K val',
             results=self.results,
             model=self.model_name,
             model_description=self.model_description,
