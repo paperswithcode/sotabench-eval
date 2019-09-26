@@ -8,12 +8,9 @@ benchmark your models. It can be used in conjunction with the
 can compare model performance on different tasks, as well as a continuous integration style
 service for your repository to benchmark your models on each commit.
 
-!!! Note
-    **sotabencheval** is a general benchmarking library, meaning it is designed to support all deep learning frameworks, 
-    and requires minimal code integration. There are alternative sotabench APIs you can use that are
-    specialized for particular frameworks, e.g. [torchbench](https://github.com/paperswithcode/torchbench) for PyTorch.
-
-
+**sotabencheval** is a general benchmarking library, meaning it is designed to support all deep learning frameworks, 
+and requires minimal code integration. There are alternative sotabench APIs you can use that are
+specialized for particular frameworks, e.g. [torchbench](https://github.com/paperswithcode/torchbench) for PyTorch.
 
 
 ## Getting Started : Benchmarking on ImageNet
