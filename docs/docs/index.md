@@ -2,7 +2,7 @@
 
 ![SotaBench](img/banner.png)
 
-You have reached the docs for the [sotabencheval](https://github.com/paperswithcvode/sotabencheval) library. This library contains a collection of deep learning benchmarks you can use to
+You have reached the docs for the [sotabencheval](https://github.com/paperswithcode/sotabench-eval) library. This library contains a collection of deep learning benchmarks you can use to
 benchmark your models. It can be used in conjunction with the 
 [sotabench.com](http://www.sotabench.com) website to record results for models, so the community
 can compare model performance on different tasks, as well as a continuous integration style
