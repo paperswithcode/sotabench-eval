@@ -238,7 +238,6 @@ class COCOEvaluator(object):
         if not self.first_batch_processed:
             self.coco_evaluator.evaluate()
             self.coco_evaluator.accumulate()
-            self.coco_evaluator.summarize()
 
             if any([detection['bbox'] for detection in detections]): # we can only hash if we have predictions
                 self.batch_hash = calculate_batch_hash(
