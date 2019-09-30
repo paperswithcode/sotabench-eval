@@ -243,7 +243,7 @@ class COCOEvaluator(object):
 
             if any([detection['bbox'] for detection in detections]): # we can only hash if we have predictions
                 self.batch_hash = calculate_batch_hash(
-                    self.cache_values(detections=detections, metrics=get_coco_metrics(self.coco_evaluator)))
+                    self.cache_values(annotations=detections, metrics=get_coco_metrics(self.coco_evaluator)))
                 self.first_batch_processed = True
 
     def get_results(self):
