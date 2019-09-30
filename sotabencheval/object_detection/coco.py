@@ -1,5 +1,7 @@
 # Some of the processing logic here is based on the torchvision COCO dataset
 
+import copy
+import numpy as np
 import os
 from pycocotools.coco import COCO
 from sotabenchapi.check import in_check_mode
@@ -172,6 +174,41 @@ class COCOEvaluator(object):
 
         return False
 
+    @staticmethod
+    def cache_format_ann(ann):
+        """
+        Cache formats an annotation dictionary with rounding. the reason we need to round is that if we have
+        small floating point originated differences, then changes the hash of the predictions.
+
+        :param ann (dict): A detection dictionary
+
+        :return: ann : A detection dictionary but with rounded values
+        """
+        ann['bbox'] = [np.round(el, 3) for el in ann['bbox']]
+        ann['score'] = np.round(ann['score'], 3)
+
+        if 'segmentation' in ann:
+            ann['segmentation'] = [np.round(el, 3) for el in ann['segmentation']]
+
+        if 'area' in ann:
+            ann['area'] = np.round(ann['area'], 3)
+
+        return ann
+
+    def cache_values(self, annotations, metrics):
+        """
+        Takes in annotations and metrics, and formats the data to calculate the hash for the cache
+        :param annotations: list of detections
+        :param metrics: dictionary of final AP metrics
+        :return: list of data (combining annotations and metrics)
+        """
+
+        metrics = {k: np.round(v, 3) for k, v in metrics.items()}
+        new_annotations = copy.deepcopy(annotations)
+        new_annotations = [self.cache_format_ann(ann) for ann in new_annotations]
+
+        return new_annotations + [metrics]
+
     def add(self, detections: list):
         """
         Update the evaluator with new detections
@@ -203,8 +240,11 @@ class COCOEvaluator(object):
             self.coco_evaluator.evaluate()
             self.coco_evaluator.accumulate()
             self.coco_evaluator.summarize()
-            self.batch_hash = calculate_batch_hash(detections + [get_coco_metrics(self.coco_evaluator)])
-            self.first_batch_processed = True
+
+            if any([detection['bbox'] for detection in detections]): # we can only hash if we have predictions
+                self.batch_hash = calculate_batch_hash(
+                    self.cache_values(detections=detections, metrics=get_coco_metrics(self.coco_evaluator)))
+                self.first_batch_processed = True
 
     def get_results(self):
         """
