@@ -4,11 +4,10 @@ import copy
 import numpy as np
 import os
 from pycocotools.coco import COCO
-from sotabenchapi.check import in_check_mode
 from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult, check_inputs
 
-from sotabencheval.utils import calculate_batch_hash, extract_archive, change_root_if_server
+from sotabencheval.utils import calculate_batch_hash, extract_archive, change_root_if_server, is_server
 from sotabencheval.object_detection.coco_eval import CocoEvaluator
 from sotabencheval.object_detection.utils import get_coco_metrics
 
@@ -158,7 +157,7 @@ class COCOEvaluator(object):
         if not self.first_batch_processed:
             raise ValueError('No batches of data have been processed so no batch_hash exists')
 
-        if not in_check_mode():  # we only check the cache on the server
+        if not is_server():  # we only check the cache on the server
             return None
 
         client = Client.public()
