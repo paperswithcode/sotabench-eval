@@ -96,12 +96,11 @@ class WikiText103Eval:
 
     @property
     def results(self):
-        return dict(
-            neglogloss=self._neglogloss,
-            tokens_seen=self._data_set_size,
-            perplexity=np.exp(self._neglogloss /
-                              self.expected_test_data_set_size)
-        )
+        perplexity = np.exp(self._neglogloss /
+                            self.expected_test_data_set_size)
+        return {  
+            'Test perplexity': perplexity 
+        }
     
     def save(self):
         """
