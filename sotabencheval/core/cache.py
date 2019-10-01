@@ -7,7 +7,7 @@ def cache_value(value):
     if isinstance(value, (str, int, bool)) or value is None:
         return value
     elif isinstance(value, float):
-        return np.round(float, CACHE_FLOAT_PRECISION)
+        return np.round(value, CACHE_FLOAT_PRECISION)
     elif isinstance(value, dict):
         return {key: cache_value(val) for key, val in sorted(value.items(), key=lambda x: x[0])}
     elif isinstance(value, list):

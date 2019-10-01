@@ -13,6 +13,8 @@ class SQuADVersion(Enum):
 
 
 class SQuADSubmission(Submission):
+    task = "Question Answering"
+
     def __init__(self,
                  root: str = '.',
                  dataset_filename: str = None,
@@ -45,7 +47,7 @@ class SQuADSubmission(Submission):
 
     def save(self):
         dataset = "SQuAD {}".format(self.evaluator.version.value)
-        super().save(dataset=dataset)
+        return super().save(dataset=dataset)
 
 
 # todo: aggregate batches so that size of the batch used for caching does not depend on evaluation batch size
@@ -91,9 +93,8 @@ class SQuADEvaluator:
 
     @property
     def has_data(self):
-        return not self.answers
+        return bool(self.answers)
 
     def get_results(self):
-        if self._results is None:
-            self.evaluate()
+        self.evaluate()
         return self._results
