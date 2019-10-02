@@ -44,6 +44,9 @@ class SQuADSubmission(Submission):
             )
             self.first_batch_processed = True
 
+    def reset(self):
+        self.evaluator.reset()
+
     def get_results(self):
         if self.cached_results:
             return self.results
@@ -78,6 +81,10 @@ class SQuADEvaluator:
             raise ValueError("Incorrect dataset version, found {} but was expecting {}"
                              .format(version, self.version.value))
         return ds['data']
+
+    def reset(self):
+        self._results = None
+        self.answers = {}
 
     def add(self, answers: Dict[str, str]):
         if not answers:
