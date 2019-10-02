@@ -2,8 +2,8 @@
 
 ![SQuAD 2.0 Dataset Examples](img/squad20.png)
 
-You can view the [SQuAD 1.1](https://sotabench.com/benchmarks/question-answering-on-squad11) and
-[SQuAD 2.0](https://sotabench.com/benchmarks/question-answering-on-squad20) leaderboards.
+You can view the [SQuAD 1.1](https://sotabench.com/benchmarks/question-answering-on-squad11-dev) and
+[SQuAD 2.0](https://sotabench.com/benchmarks/question-answering-on-squad20-dev) leaderboards.
 
 ## Getting Started
 
@@ -61,8 +61,9 @@ evaluator = SQuADSubmission(model_name='My Super Model', version=SQuADVersion.V2
 ```
 
 If you are reproducing a model from a paper, then you can enter the arXiv ID. If you
-put in the same model name string as on the [SQuAD 1.1](https://sotabench.com/benchmarks/question-answering-on-squad11) or
-[SQuAD 2.0](https://sotabench.com/benchmarks/question-answering-on-squad20) leaderboard
+put in the same model name string as on the
+[SQuAD 1.1](https://sotabench.com/benchmarks/question-answering-on-squad11-dev) or
+[SQuAD 2.0](https://sotabench.com/benchmarks/question-answering-on-squad20-dev) leaderboard
 then you will enable direct comparison with the paper's model. For example:
 
 ``` python

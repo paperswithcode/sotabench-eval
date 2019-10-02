@@ -50,7 +50,7 @@ class SQuADSubmission(Submission):
         return self.results
 
     def save(self):
-        dataset = "SQuAD {}".format(self.evaluator.version.value)
+        dataset = "SQuAD{} dev".format(self.evaluator.version.value[1:])
         return super().save(dataset=dataset)
 
 
