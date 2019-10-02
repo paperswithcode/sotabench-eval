@@ -15,7 +15,7 @@ import dataclasses
 
 import torch # TODO fix it so that we can work with Tensorflow as well.
 
-TASK="language modeling"
+TASK = "Language Modelling"
 def perplexity_evauluate(results_generator: Generator[Tuple[torch.Tensor, torch.Tensor], None , None], limit: int=None):
     set_sz = 0
     neglogloss = 0
