@@ -27,6 +27,7 @@ class SQuADSubmission(Submission):
         super().__init__(model_name, paper_arxiv_id, paper_pwc_id, paper_results, model_description)
         self.root = change_root_if_server(root=local_root,
                                           server_root=".data/nlp/squad")
+        self.version = version
         if dataset_filename is None or is_server():
             dataset_filename = "dev-{}.json".format(version.value)
         self.dataset_path = Path(self.root) / dataset_filename
