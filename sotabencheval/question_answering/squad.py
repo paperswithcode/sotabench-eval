@@ -27,6 +27,7 @@ class SQuADSubmission(Submission):
         super().__init__(model_name, paper_arxiv_id, paper_pwc_id, paper_results, model_description)
         self.root = change_root_if_server(root=local_root,
                                           server_root=".data/nlp/squad")
+        self.version = version
         if dataset_filename is None or is_server():
             dataset_filename = "dev-{}.json".format(version.value)
         self.dataset_path = Path(self.root) / dataset_filename
@@ -42,6 +43,9 @@ class SQuADSubmission(Submission):
                                   metrics=self.evaluator.get_results(ignore_missing=True))
             )
             self.first_batch_processed = True
+
+    def reset(self):
+        self.evaluator.reset()
 
     def get_results(self):
         if self.cached_results:
@@ -77,6 +81,10 @@ class SQuADEvaluator:
             raise ValueError("Incorrect dataset version, found {} but was expecting {}"
                              .format(version, self.version.value))
         return ds['data']
+
+    def reset(self):
+        self._results = None
+        self.answers = {}
 
     def add(self, answers: Dict[str, str]):
         if not answers:

@@ -1,7 +1,6 @@
-from sotabenchapi.check import in_check_mode
 from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult
-
+from sotabencheval.utils import is_server
 from sotabencheval.core.cache import cache_value
 
 
@@ -58,7 +57,7 @@ class Submission:
         if not self.first_batch_processed:
             raise ValueError('No batches of data have been processed so no batch_hash exists')
 
-        if not in_check_mode():  # we only check the cache on the server
+        if not is_server():  # we only check the cache on the server
             return None
 
         client = Client.public()
