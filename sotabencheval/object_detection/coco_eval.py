@@ -2,8 +2,6 @@
 
 import numpy as np
 import copy
-import torch
-import torch._six
 
 from pycocotools.cocoeval import COCOeval
 from pycocotools.coco import COCO
@@ -51,41 +49,6 @@ class CocoEvaluator(object):
         for iou_type, coco_eval in self.coco_eval.items():
             # print("IoU metric: {}".format(iou_type))
             coco_eval.summarize()
-
-    def prepare(self, predictions, iou_type):
-        if iou_type == "bbox":
-            return self.prepare_for_coco_detection(predictions)
-        else:
-            raise ValueError("Unknown iou type {}".format(iou_type))
-
-    def prepare_for_coco_detection(self, predictions):
-        coco_results = []
-        for original_id, prediction in predictions.items():
-            if len(prediction) == 0:
-                continue
-
-            boxes = prediction["boxes"]
-            boxes = convert_to_xywh(boxes).tolist()
-            scores = prediction["scores"].tolist()
-            labels = prediction["labels"].tolist()
-
-            coco_results.extend(
-                [
-                    {
-                        "image_id": original_id,
-                        "category_id": labels[k],
-                        "bbox": box,
-                        "score": scores[k],
-                    }
-                    for k, box in enumerate(boxes)
-                ]
-            )
-        return coco_results
-
-
-def convert_to_xywh(boxes):
-    xmin, ymin, xmax, ymax = boxes.unbind(1)
-    return torch.stack((xmin, ymin, xmax - xmin, ymax - ymin), dim=1)
 
 
 #################################################################

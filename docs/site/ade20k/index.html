@@ -36,7 +36,7 @@
     
     
       
-        <title>PASCAL VOC 2012 - sotabencheval Docs</title>
+        <title>ADE20K - sotabencheval Docs</title>
       
     
     
@@ -83,7 +83,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#pascal-voc-2012" tabindex="1" class="md-skip">
+      <a href="#ade20k" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -109,7 +109,7 @@
             </span>
             <span class="md-header-nav__topic">
               
-                PASCAL VOC 2012
+                ADE20K
               
             </span>
           
@@ -188,42 +188,6 @@
       
       
 
-
-  <li class="md-nav__item">
-    <a href="../ade20k/" title="ADE20K" class="md-nav__link">
-      ADE20K
-    </a>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item">
-    <a href="../coco/" title="COCO" class="md-nav__link">
-      COCO
-    </a>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item">
-    <a href="../imagenet/" title="ImageNet" class="md-nav__link">
-      ImageNet
-    </a>
-  </li>
-
-    
-      
-      
-      
-
   
 
 
@@ -235,11 +199,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        PASCAL VOC 2012
+        ADE20K
       </label>
     
-    <a href="./" title="PASCAL VOC 2012" class="md-nav__link md-nav__link--active">
-      PASCAL VOC 2012
+    <a href="./" title="ADE20K" class="md-nav__link md-nav__link--active">
+      ADE20K
     </a>
     
       
@@ -288,13 +252,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#a-full-sotabenchpy-example" title="A full sotabench.py example" class="md-nav__link">
-    A full sotabench.py example
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#need-more-help" title="Need More Help?" class="md-nav__link">
     Need More Help?
   </a>
@@ -309,6 +266,42 @@
   
 </nav>
     
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../coco/" title="COCO" class="md-nav__link">
+      COCO
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../imagenet/" title="ImageNet" class="md-nav__link">
+      ImageNet
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../pascalvoc/" title="PASCAL VOC 2012" class="md-nav__link">
+      PASCAL VOC 2012
+    </a>
   </li>
 
     
@@ -368,13 +361,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#a-full-sotabenchpy-example" title="A full sotabench.py example" class="md-nav__link">
-    A full sotabench.py example
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#need-more-help" title="Need More Help?" class="md-nav__link">
     Need More Help?
   </a>
@@ -398,9 +384,9 @@
               
                 
                 
-                <h1 id="pascal-voc-2012">PASCAL VOC 2012</h1>
-<p><img alt="VOC Dataset Examples" src="../img/pascalvoc2012.png" /></p>
-<p>You can view the PASCAL VOC 2012 leaderboard <a href="https://sotabench.com/benchmarks/semantic-segmentation-on-pascal-voc-2012">here</a>.</p>
+                <h1 id="ade20k">ADE20K</h1>
+<p><img alt="ADE20K Dataset Examples" src="../img/ade20k.png" /></p>
+<p>You can view the ADE20K leaderboard <a href="https://sotabench.com/benchmarks/semantic-segmentation-on-ade20k-val">here</a>.</p>
 <h2 id="getting-started">Getting Started</h2>
 <p>You'll need the following in the root of your repository:</p>
 <ul>
@@ -408,28 +394,28 @@
 <li><code>requirements.txt</code> file - Python dependencies to be installed before running <code>sotabench.py</code></li>
 <li><code>sotabench_setup.sh</code> <em>(optional)</em> - any advanced dependencies or setup, e.g. compilation</li>
 </ul>
-<p>You can write whatever you want in your <code>sotabench.py</code> file to get model predictions on the VOC 2012 dataset. For example,
+<p>You can write whatever you want in your <code>sotabench.py</code> file to get model predictions on the ADE20K 2012 dataset. For example,
 PyTorch users might use torchvision to load the dataset.</p>
 <p>But you will need to record your results for the server, and you'll want to avoid doing things like
 downloading the dataset on the server. So you should:</p>
 <ul>
-<li><strong>Point to the server VOC 2012 data paths</strong> - popular datasets are pre-downloaded on the server.</li>
+<li><strong>Point to the server ADE20K data paths</strong> - popular datasets are pre-downloaded on the server.</li>
 <li><strong>Include an Evaluation object</strong> in <code>sotabench.py</code> file to record the results.</li>
 <li><strong>Use Caching</strong> <em>(optional)</em> - to speed up evaluation by hashing the first batch of predictions.</li>
 </ul>
 <p>We explain how to do these various steps below.</p>
 <h2 id="server-data-location">Server Data Location</h2>
-<p>The VOC 2012 data is located in the root of your repository on the server at <code>.data/vision/voc2012</code>. In this folder is contained:</p>
+<p>The ADE20K data is located in the root of your repository on the server at <code>.data/vision/ade20k</code>. In this folder is contained:</p>
 <ul>
-<li><code>VOCtrainval_11-May-2012.tar</code> - containing validation images and annotations</li>
+<li><code>ADEChallengeData2016.zip</code> - containing validation images and annotations</li>
 </ul>
-<p>Your local VOC 2012 files may have a different file directory structure, so you
+<p>Your local ADE20K files may have a different file directory structure, so you
 can use control flow like below to change the data path if the script is being
 run on sotabench servers:</p>
 <div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">sotabencheval.utils</span> <span class="kn">import</span> <span class="n">is_server</span>
 
 <span class="k">if</span> <span class="n">is_server</span><span class="p">():</span>
-    <span class="n">DATA_ROOT</span> <span class="o">=</span> <span class="s1">&#39;./.data/vision/voc2012&#39;</span>
+    <span class="n">DATA_ROOT</span> <span class="o">=</span> <span class="s1">&#39;./.data/vision/ade20k&#39;</span>
 <span class="k">else</span><span class="p">:</span> <span class="c1"># local settings</span>
     <span class="n">DATA_ROOT</span> <span class="o">=</span> <span class="s1">&#39;/home/ubuntu/my_data/&#39;</span>
 </pre></div>
@@ -438,31 +424,31 @@ run on sotabench servers:</p>
 <p>This will detect if <code>sotabench.py</code> is being run on the server and change behaviour accordingly.</p>
 <h2 id="how-do-i-initialize-an-evaluator">How Do I Initialize an Evaluator?</h2>
 <p>Add this to your code - before you start batching over the dataset and making predictions:</p>
-<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">sotabencheval.semantic_segmentation</span> <span class="kn">import</span> <span class="n">PASCALVOCEvaluator</span>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">sotabencheval.semantic_segmentation</span> <span class="kn">import</span> <span class="n">ADE20KEvaluator</span>
 
-<span class="n">evaluator</span> <span class="o">=</span> <span class="n">PASCALVOCEvaluator</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;My Super Model&#39;</span><span class="p">)</span>
+<span class="n">evaluator</span> <span class="o">=</span> <span class="n">ADE20KEvaluator</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;My Super Model&#39;</span><span class="p">)</span>
 </pre></div>
 
 
 <p>If you are reproducing a model from a paper, then you can enter the arXiv ID. If you
-put in the same model name string as on the <a href="https://sotabench.com/benchmarks/semantic-segmentation-on-pascal-voc-2012">leaderboard</a>
+put in the same model name string as on the <a href="https://sotabench.com/benchmarks/semantic-segmentation-on-ade20k-val">leaderboard</a>
 then you will enable direct comparison with the paper. For example:</p>
-<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">sotabencheval.semantic_segmentation</span> <span class="kn">import</span> <span class="n">PASCALVOCEvaluator</span>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">sotabencheval.semantic_segmentation</span> <span class="kn">import</span> <span class="n">ADE20KEvaluator</span>
 
-<span class="n">evaluator</span> <span class="o">=</span> <span class="n">PASCALVOCEvaluator</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;PSPNet&#39;</span><span class="p">,</span> <span class="n">paper_arxiv_id</span><span class="o">=</span><span class="s1">&#39;1612.01105&#39;</span><span class="p">)</span>
+<span class="n">evaluator</span> <span class="o">=</span> <span class="n">ADE20KEvaluator</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;OCR (HRNetV2-W48)&#39;</span><span class="p">,</span> <span class="n">paper_arxiv_id</span><span class="o">=</span><span class="s1">&#39;1909.11065&#39;</span><span class="p">)</span>
 </pre></div>
 
 
 <p>The above will directly compare with the result of the paper when run on the server.</p>
 <h2 id="how-do-i-evaluate-predictions">How Do I Evaluate Predictions?</h2>
 <p>The evaluator object has an <code>.add()</code> method to submit predictions by batch or in full.</p>
-<p>For PASCAL there are two required arguments: <code>outputs</code>, a 1D np.ndarray of semantic class predictions per label, 
+<p>For ADE20K there are two required arguments: <code>outputs</code>, a 1D np.ndarray of semantic class predictions per label, 
 and <code>targets</code>, a 1D np.ndarray of ground truth semantic classes per pixel. In other words, it requires flattened
 inputs and outputs.</p>
 <p>To elaborate, suppose you are making predictions, batch by batch, and have your model output 
 and the original targets with batch_size <code>32</code>, and image size <code>(520, 480)</code>. The shape of your outputs might look like:</p>
 <div class="codehilite"><pre><span></span><span class="n">batch_output</span><span class="o">.</span><span class="n">shape</span>
-<span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">520</span><span class="p">,</span> <span class="mi">480</span><span class="p">)</span> <span class="c1"># where 21 is the number of VOC classes</span>
+<span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">520</span><span class="p">,</span> <span class="mi">480</span><span class="p">)</span> <span class="c1"># where 150 is the number of ADE20K classes</span>
 
 <span class="n">batch_target</span><span class="o">.</span><span class="n">shape</span>
 <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">520</span><span class="p">,</span> <span class="mi">480</span><span class="p">)</span>
@@ -499,7 +485,7 @@ pixels - so the model is correct.</p>
 <p>You can do this all at once in a single call to <code>add()</code>, but more naturally, you will 
 probably loop over the dataset and call the method for the outputs of each batch.
 That would like something like this (for a PyTorch example):</p>
-<div class="codehilite"><pre><span></span><span class="n">evaluator</span> <span class="o">=</span> <span class="n">PASCALVOCEvaluator</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;FCN (ResNet-101)&#39;</span><span class="p">,</span> <span class="n">paper_arxiv_id</span><span class="o">=</span><span class="s1">&#39;1605.06211&#39;</span><span class="p">)</span>
+<div class="codehilite"><pre><span></span><span class="n">evaluator</span> <span class="o">=</span> <span class="n">ADE20KEvaluator</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;OCR (HRNetV2-W48)&#39;</span><span class="p">,</span> <span class="n">paper_arxiv_id</span><span class="o">=</span><span class="s1">&#39;1909.11065&#39;</span><span class="p">)</span>
 
 <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
     <span class="k">for</span> <span class="n">image</span><span class="p">,</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="n">data_loader_test</span><span class="p">):</span>
@@ -531,7 +517,7 @@ if the model hasn't changed and evaluation is lengthy. </p>
 current metrics and this tells us if the model is the same given the dataset.
 You can include hashing within an evaluation loop like follows (in the following
 example for a PyTorch repository):</p>
-<div class="codehilite"><pre><span></span><span class="n">evaluator</span> <span class="o">=</span> <span class="n">PASCALVOCEvaluator</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;FCN (ResNet-101)&#39;</span><span class="p">,</span> <span class="n">paper_arxiv_id</span><span class="o">=</span><span class="s1">&#39;1605.06211&#39;</span><span class="p">)</span>
+<div class="codehilite"><pre><span></span><span class="n">evaluator</span> <span class="o">=</span> <span class="n">ADE20KEvaluator</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;OCR (HRNetV2-W48)&#39;</span><span class="p">,</span> <span class="n">paper_arxiv_id</span><span class="o">=</span><span class="s1">&#39;1909.11065&#39;</span><span class="p">)</span>
 
 <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
     <span class="k">for</span> <span class="n">image</span><span class="p">,</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="n">data_loader_test</span><span class="p">):</span>
@@ -551,77 +537,6 @@ example for a PyTorch repository):</p>
 we simply return hashed results rather than running the whole evaluation again.</p>
 <p>Caching is very useful if you have large models, or a repository that is evaluating
 multiple models, as it speeds up evaluation significantly.</p>
-<h2 id="a-full-sotabenchpy-example">A full sotabench.py example</h2>
-<p>Below we show an implementation for a model from the torchvision repository. This
-incorporates all the features explained above: (a) using the server data root, 
-(b) using the ImageNet Evaluator, and (c) caching the evaluation logic:</p>
-<div class="codehilite"><pre><span></span><span class="kn">import</span> <span class="nn">PIL</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torchvision</span>
-<span class="kn">from</span> <span class="nn">torchvision.models.segmentation</span> <span class="kn">import</span> <span class="n">fcn_resnet101</span>
-<span class="kn">import</span> <span class="nn">torchvision.transforms</span> <span class="kn">as</span> <span class="nn">transforms</span>
-<span class="kn">import</span> <span class="nn">tqdm</span>
-
-<span class="kn">from</span> <span class="nn">sotabench_transforms</span> <span class="kn">import</span> <span class="n">Normalize</span><span class="p">,</span> <span class="n">Compose</span><span class="p">,</span> <span class="n">Resize</span><span class="p">,</span> <span class="n">ToTensor</span>
-
-<span class="kn">from</span> <span class="nn">sotabencheval.semantic_segmentation</span> <span class="kn">import</span> <span class="n">PASCALVOCEvaluator</span>
-<span class="kn">from</span> <span class="nn">sotabencheval.utils</span> <span class="kn">import</span> <span class="n">is_server</span>
-
-<span class="k">if</span> <span class="n">is_server</span><span class="p">():</span>
-    <span class="n">DATA_ROOT</span> <span class="o">=</span> <span class="s1">&#39;./.data/vision/voc2012&#39;</span>
-<span class="k">else</span><span class="p">:</span> <span class="c1"># local settings</span>
-    <span class="n">DATA_ROOT</span> <span class="o">=</span> <span class="s1">&#39;/home/ubuntu/my_data/&#39;</span>
-
-<span class="n">MODEL_NAME</span> <span class="o">=</span> <span class="s1">&#39;fcn_resnet101&#39;</span>
-
-<span class="k">def</span> <span class="nf">cat_list</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-    <span class="n">max_size</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">images</span><span class="p">]))</span>
-    <span class="n">batch_shape</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">),)</span> <span class="o">+</span> <span class="n">max_size</span>
-    <span class="n">batched_imgs</span> <span class="o">=</span> <span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="o">*</span><span class="n">batch_shape</span><span class="p">)</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="n">fill_value</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">img</span><span class="p">,</span> <span class="n">pad_img</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">batched_imgs</span><span class="p">):</span>
-        <span class="n">pad_img</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="p">:</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">batched_imgs</span>
-
-<span class="k">def</span> <span class="nf">collate_fn</span><span class="p">(</span><span class="n">batch</span><span class="p">):</span>
-    <span class="n">images</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">batch</span><span class="p">))</span>
-    <span class="n">batched_imgs</span> <span class="o">=</span> <span class="n">cat_list</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">batched_targets</span> <span class="o">=</span> <span class="n">cat_list</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">batched_imgs</span><span class="p">,</span> <span class="n">batched_targets</span>
-
-<span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">)</span>
-
-<span class="n">normalize</span> <span class="o">=</span> <span class="n">Normalize</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="p">[</span><span class="mf">0.485</span><span class="p">,</span> <span class="mf">0.456</span><span class="p">,</span> <span class="mf">0.406</span><span class="p">],</span> <span class="n">std</span><span class="o">=</span><span class="p">[</span><span class="mf">0.229</span><span class="p">,</span> <span class="mf">0.224</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">])</span>
-<span class="n">my_transforms</span> <span class="o">=</span> <span class="n">Compose</span><span class="p">([</span><span class="n">Resize</span><span class="p">((</span><span class="mi">520</span><span class="p">,</span> <span class="mi">480</span><span class="p">)),</span> <span class="n">ToTensor</span><span class="p">(),</span> <span class="n">normalize</span><span class="p">])</span>
-
-<span class="n">dataset_test</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">VOCSegmentation</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">DATA_ROOT</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="s1">&#39;2012&#39;</span><span class="p">,</span> <span class="n">image_set</span><span class="o">=</span><span class="s2">&quot;val&quot;</span><span class="p">,</span> 
-                                                    <span class="n">transforms</span><span class="o">=</span><span class="n">my_transforms</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="n">test_sampler</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">SequentialSampler</span><span class="p">(</span><span class="n">dataset_test</span><span class="p">)</span>
-
-<span class="n">data_loader_test</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span>
-    <span class="n">dataset_test</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
-    <span class="n">sampler</span><span class="o">=</span><span class="n">test_sampler</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-    <span class="n">collate_fn</span><span class="o">=</span><span class="n">collate_fn</span><span class="p">)</span>
-
-<span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">segmentation</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s1">&#39;fcn_resnet101&#39;</span><span class="p">](</span><span class="n">num_classes</span><span class="o">=</span><span class="mi">21</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
-
-<span class="n">evaluator</span> <span class="o">=</span> <span class="n">PASCALVOCEvaluator</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;FCN (ResNet-101)&#39;</span><span class="p">,</span> <span class="n">paper_arxiv_id</span><span class="o">=</span><span class="s1">&#39;1605.06211&#39;</span><span class="p">)</span>
-
-<span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-    <span class="k">for</span> <span class="n">image</span><span class="p">,</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="n">data_loader_test</span><span class="p">):</span>
-        <span class="n">image</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">),</span> <span class="n">target</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">)</span>
-        <span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
-        <span class="n">output</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="s1">&#39;out&#39;</span><span class="p">]</span>
-
-        <span class="n">evaluator</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">target</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
-        <span class="k">if</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">cache_exists</span><span class="p">:</span>
-            <span class="k">break</span>
-
-<span class="n">evaluator</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
-</pre></div>
-
-
 <h2 id="need-more-help">Need More Help?</h2>
 <p>Head on over to the <a href="https://forum.sotabench.com/c/cv">Computer Vision</a> section of the sotabench
 forums if you have any questions or difficulties.</p>
@@ -645,7 +560,7 @@ forums if you have any questions or difficulties.</p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../imagenet/" title="ImageNet" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href=".." title="Welcome to sotabencheval!" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -654,11 +569,25 @@ forums if you have any questions or difficulties.</p>
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                ImageNet
+                Welcome to sotabencheval!
               </span>
             </div>
           </a>
         
+        
+          <a href="../coco/" title="COCO" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                COCO
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
         
       </nav>
     </div>

@@ -1,5 +1,5 @@
 import io
-from setuptools import setup
+from setuptools import setup, find_packages
 from sotabencheval.version import __version__
 
 name = "sotabencheval"
@@ -34,12 +34,7 @@ setup(
     url=url,
     platforms=["Windows", "POSIX", "MacOSX"],
     license=license,
-    packages=[
-        name,
-        "sotabencheval.image_classification",
-        "sotabencheval.object_detection",
-        "sotabencheval.semantic_segmentation",
-    ],
+    packages=find_packages(),
     include_package_data=True,
     install_requires=get_requirements(),
     classifiers=[
