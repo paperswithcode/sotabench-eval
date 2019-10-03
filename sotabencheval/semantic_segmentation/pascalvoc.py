@@ -1,9 +1,8 @@
 import numpy as np
-from sotabenchapi.check import in_check_mode
 from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult, check_inputs
 
-from sotabencheval.utils import calculate_batch_hash
+from sotabencheval.utils import calculate_batch_hash, is_server
 from sotabencheval.semantic_segmentation.utils import ConfusionMatrix
 
 
@@ -117,7 +116,7 @@ class PASCALVOCEvaluator(object):
         if not self.first_batch_processed:
             raise ValueError('No batches of data have been processed so no batch_hash exists')
 
-        if not in_check_mode():
+        if not is_server():
             return None
 
         client = Client.public()
