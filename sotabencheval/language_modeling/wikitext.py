@@ -1,41 +1,17 @@
 # Some of the processing logic here is based on the torchvision COCO dataset
 
 import os
-from typing import Generator, Tuple
+from itertools import islice
+from enum import Enum
+from pathlib import Path
+
+import numpy as np
 
 from sotabenchapi.check import in_check_mode
 from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult, check_inputs
-from sotabencheval.utils import calculate_batch_hash, extract_archive, change_root_if_server
-
-import numpy as np
-from itertools import islice
-
-import dataclasses
-
-import torch # TODO fix it so that we can work with Tensorflow as well.
-
-TASK = "Language Modelling"
-def perplexity_evauluate(results_generator: Generator[Tuple[torch.Tensor, torch.Tensor], None , None], limit: int=None):
-    set_sz = 0
-    neglogloss = 0
-    for log_probs, labels in islice(results_generator, limit):
-        neglogloss += -log_probs.gather(-1, labels.unsqueeze(-1)).squeeze(1).sum().cpu().item()
-        set_sz += int(labels.numel())
-    return np.exp(neglogloss / set_sz), set_sz, neglogloss/set_sz, neglogloss
-
-#%%
-def map_eval_to_benchmark(dictionary):
-    key_map = {
-        'model_name':'model',
-        'model_description':'model_description',
-        'paper_arxiv_id':'arxiv_id',
-        'paper_pwc_id':'pwc_id',
-        'paper_results':'paper_results',
-        'run_hash':'run_hash'
-    }# TODO make it noop by changing the BenchmarkResults
-    return {key_map[key]: val for key,val in dictionary.items() if key in key_map}
-
+from sotabencheval.core import BaseEvaluator
+from sotabencheval.utils import calculate_batch_hash, extract_archive, change_root_if_server, is_server
 
 def to_numpy(*args):
     def convert(a):
@@ -46,77 +22,90 @@ def to_numpy(*args):
         return a 
     return [convert(a) for a in args]
 
-#TODO: python 3.6 does not have dataclasses !
-@dataclasses.dataclass
-class WikiText103Eval:
-    model_name: str = None
-    paper_arxiv_id: str = None
-    paper_pwc_id: str = None
-    paper_results: dict = None
-    model_description: str = None
-    text_transformation: bool = False
-    subword_tokenization: bool = False
-    def __post_init__(self):            
-        self.expected_test_data_set_size = 245569            
-        self.dataset = 'WikiText-103'
-        self.task = TASK
-        self.reset()
+class LMDataset(Enum):
+    WikiText103 = ('WikiText-103', 245569, 267735)
+    WikiText2 = ('WikiText-2', 245569, 33278)
+    
+    def __init__(self, pwc_name, testset_size, vocab_size):
+        self.pwc_name = pwc_name
+        self.testset_size = testset_size
+        self.vocab_size = vocab_size
+    
+    def get_path(self, local_root, local_unzip=False):
+        root = Path(change_root_if_server(root=local_root,
+                                          server_root=".data/nlp/" + self.pwc_name.lower()))
+        zip_name = self.pwc_name.lower() + "-v1.zip"
+        dataset_path = root / "wiki.test.tokens"
+        if not dataset_path.exists(): # unzip
+            extract_archive(str(root / zip_name), to_path=root.parent)
+        return dataset_path
+        
+class WikiTextEvaluator(BaseEvaluator):
+    task = "Language Modelling"
+    dataset = None # defined in subclass
 
+    def __init__(self,
+                 local_root: str = '.',
+                 model_name: str = None,
+                 paper_arxiv_id: str = None,
+                 paper_pwc_id: str = None,
+                 paper_results: dict = None,
+                 model_description=None,
+                 text_transformation: bool = False,
+                 subword_tokenization: bool = False):
+
+        super().__init__(model_name, paper_arxiv_id,
+                         paper_pwc_id, paper_results, model_description)
+
+        self.local_root = local_root 
+        self.reset()
+    
+    @property
+    def dataset_path(self):
+        self.dataset.get_path(self.local_root)
+        
     def reset(self):
         self._neglogloss = 0
         self._data_set_size = 0 
     
-    #TODO handle both tensorflow and pytorch
-    def add(self, log_probabilities, labels):
+    def add(self, log_probabilities, targets):
         if hasattr(log_probabilities, 'cpu') and hasattr(log_probabilities, 'numpy'):
-            self._neglogloss += -log_probabilities.gather(-1, labels.unsqueeze(-1)).squeeze(1).sum().cpu().item()
-            self._data_set_size += int(labels.numel())
+            probs = log_probabilities.gather(-1,
+                                             targets.unsqueeze(-1))
+            self._neglogloss += - probs.sum().cpu().item()
+            self._data_set_size += int(targets.numel())
         else: # fall back to numpy implementation that is 4 times slower than pytorch
-            log_probabilities, labels =  to_numpy(log_probabilities, labels)
-            vocab_sz = log_probabilities.shape[-1]
+            vocab_sz = int(log_probabilities.shape[-1])
+            log_probabilities, targets =  to_numpy(log_probabilities, targets)
             log_probabilities = log_probabilities.reshape(-1, vocab_sz)
-            labels = labels.reshape(-1)
-            self._neglogloss += - log_probabilities[np.arange(log_probabilities.shape[0]), labels].sum()
-            self._data_set_size += int(labels.shape[0])
+            targets = targets.reshape(-1)
+            probs = log_probabilities[np.arange(log_probabilities.shape[0]), targets]
+            self._neglogloss += - probs.sum()
+            self._data_set_size += int(targets.shape[0])
+
+        if not self.first_batch_processed:
+            content = self.cache_values(probs=to_numpy(probs)[0].reshape(-1))
+            self.batch_hash = calculate_batch_hash(content)
+            self.first_batch_processed = True
         return self.results
 
-    def eval(self, results_generator):
-        self.reset()
-        for log_probs, labels in results_generator:
-            self.add(log_probs, labels)
-            if self.check_first_batch():
-                return self.save()
-        return self.save()
-
-    def check_results(self):
-        pass
-    
-    def check_first_batch(self):
-        pass
-
-    @property
-    def results(self):
+    def get_results(self):
+        if self.cached_results:
+            return self.results
         perplexity = np.exp(self._neglogloss /
-                            self.expected_test_data_set_size)
-        return {  
-            'Test perplexity': perplexity 
+                            self.dataset.testset_size)
+                            
+        self.results = {
+            'Test perplexity': perplexity
         }
-    
+        return self.results
+
     def save(self):
-        """
-        Calculate results and then put into a BenchmarkResult object
+        return super().save(dataset=self.dataset.pwc_name)
 
-        On the sotabench.com server, this will produce a JSON file serialisation and results will be recorded
-        on the platform.
 
-        :return: BenchmarkResult object with results and metadata
-        """
-        self.check_results()
-        description = map_eval_to_benchmark(dataclasses.asdict(self))
-        return BenchmarkResult(
-            task=self.task,
-            dataset=self.dataset,
-            config={},
-            results=self.results,
-            **description
-        )
+class WikiText103Evaluator(WikiTextEvaluator):
+    dataset = LMDataset.WikiText103
+
+class WikiText2Evaluator(WikiTextEvaluator):
+    dataset = LMDataset.WikiText2

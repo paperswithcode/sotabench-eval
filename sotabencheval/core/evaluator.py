@@ -72,9 +72,23 @@ class BaseEvaluator:
             return True
 
         return False
-
+    
+    def reset(self):
+        pass
+    
     def cache_values(self, **kwargs):
         return cache_value(kwargs)
+
+    def eval(self, results_generator):
+        self.reset()
+        for results in results_generator:
+            if isinstance(results, dict): 
+                self.add(**results)
+            else:
+                self.add(*results)
+            if self.cache_exists:
+                break
+        return self.save()
 
     def save(self, **kwargs):
         """
