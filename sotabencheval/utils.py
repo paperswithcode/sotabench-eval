@@ -5,6 +5,10 @@ import tarfile
 import zipfile
 import os
 from tqdm import tqdm
+from pathlib import Path
+
+
+SOTABENCH_CACHE = Path.home() / ".cache"
 
 
 class AverageMeter(object):
@@ -66,6 +70,20 @@ def is_server():
         return True
     else:
         return False
+
+
+def set_env_on_server(env_name, value):
+    """
+    If run on sotabench server, sets an environment variable with a given name to value (casted to str).
+
+    :param env_name: environment variable name
+    :param value: value to set if executed on sotabench
+    :return: whether code is being run on the server
+    """
+    if is_server():
+        os.environ[env_name] = str(value)
+        return True
+    return False
 
 
 # below utilities are taken from the torchvision repository
