@@ -1,4 +1,4 @@
-from sotabencheval.core import Submission
+from sotabencheval.core import BaseEvaluator
 from sotabencheval.utils import calculate_batch_hash, change_root_if_server, is_server
 from sotabencheval.question_answering.utils import *
 from typing import Dict
@@ -12,7 +12,7 @@ class SQuADVersion(Enum):
     V20 = 'v2.0'
 
 
-class SQuADSubmission(Submission):
+class SQuADEvaluator(BaseEvaluator):
     task = "Question Answering"
 
     def __init__(self,
@@ -32,29 +32,29 @@ class SQuADSubmission(Submission):
             dataset_filename = "dev-{}.json".format(version.value)
         self.dataset_path = Path(self.root) / dataset_filename
 
-        self.evaluator = SQuADEvaluator(self.dataset_path, version)
+        self.metrics = SQuADMetrics(self.dataset_path, version)
 
     def add(self, answers: Dict[str, str]):
-        self.evaluator.add(answers)
+        self.metrics.add(answers)
 
-        if not self.first_batch_processed and self.evaluator.has_data:
+        if not self.first_batch_processed and self.metrics.has_data:
             self.batch_hash = calculate_batch_hash(
-                self.cache_values(answers=self.evaluator.answers,
-                                  metrics=self.evaluator.get_results(ignore_missing=True))
+                self.cache_values(answers=self.metrics.answers,
+                                  metrics=self.metrics.get_results(ignore_missing=True))
             )
             self.first_batch_processed = True
 
     def reset(self):
-        self.evaluator.reset()
+        self.metrics.reset()
 
     def get_results(self):
         if self.cached_results:
             return self.results
-        self.results = self.evaluator.get_results()
+        self.results = self.metrics.get_results()
         return self.results
 
     def save(self):
-        dataset = "SQuAD{} dev".format(self.evaluator.version.value[1:])
+        dataset = "SQuAD{} dev".format(self.metrics.version.value[1:])
         return super().save(dataset=dataset)
 
 
@@ -62,7 +62,7 @@ class SQuADSubmission(Submission):
 CACHE_BATCH_SIZE = 1024
 
 
-class SQuADEvaluator:
+class SQuADMetrics:
     def __init__(self, dataset_path: Path, version: SQuADVersion = SQuADVersion.V20):
         self.version = version
         self.answers = {}

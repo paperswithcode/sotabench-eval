@@ -3,12 +3,11 @@
 import numpy as np
 import os
 import pickle
-from sotabenchapi.check import in_check_mode
 from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult, check_inputs
 import tqdm
 
-from sotabencheval.utils import AverageMeter, calculate_batch_hash, download_url, change_root_if_server
+from sotabencheval.utils import AverageMeter, calculate_batch_hash, download_url, change_root_if_server, is_server
 from sotabencheval.image_classification.utils import top_k_accuracy_score
 
 ARCHIVE_DICT = {
@@ -194,7 +193,7 @@ class ImageNetEvaluator(object):
         if not self.first_batch_processed:
             raise ValueError('No batches of data have been processed so no batch_hash exists')
 
-        if not in_check_mode():  # we only check the cache on the server
+        if not is_server():  # we only check the cache on the server
             return None
 
         client = Client.public()

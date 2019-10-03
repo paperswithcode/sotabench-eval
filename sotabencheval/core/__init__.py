@@ -1,3 +1,3 @@
-from sotabencheval.core.submission import Submission
+from sotabencheval.core.evaluator import BaseEvaluator
 
-__all__ = ["Submission"]
+__all__ = ["BaseEvaluator"]
