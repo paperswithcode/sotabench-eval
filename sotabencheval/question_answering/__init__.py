@@ -1,3 +1,3 @@
-from sotabencheval.question_answering.squad import SQuADSubmission, SQuADVersion
+from sotabencheval.question_answering.squad import SQuADEvaluator, SQuADVersion
 
-__all__ = ["SQuADSubmission", "SQuADVersion"]
+__all__ = ["SQuADEvaluator", "SQuADVersion"]

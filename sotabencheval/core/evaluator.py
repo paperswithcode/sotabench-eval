@@ -4,7 +4,7 @@ from sotabencheval.utils import is_server
 from sotabencheval.core.cache import cache_value
 
 
-class Submission:
+class BaseEvaluator:
     def __init__(self,
                  model_name: str = None,
                  paper_arxiv_id: str = None,
