@@ -1,9 +1,10 @@
-# WMT datasets
+# WMT
 
 You can view the WMT Machine Translation leaderboards:
- * [WMT2014 English-German](https://sotabench.com/benchmarks/machine-translation-on-wmt2014-english-german)
- * [WMT2014 English-French](https://sotabench.com/benchmarks/machine-translation-on-wmt2014-english-french)
- * [WMT2019 English-German](https://sotabench.com/benchmarks/machine-translation-on-wmt2019-english-german)
+
+- [WMT2014 English-German](https://sotabench.com/benchmarks/machine-translation-on-wmt2014-english-german)
+- [WMT2014 English-French](https://sotabench.com/benchmarks/machine-translation-on-wmt2014-english-french)
+- [WMT2019 English-German](https://sotabench.com/benchmarks/machine-translation-on-wmt2019-english-german)
 
 ## Getting Started
 
@@ -99,10 +100,10 @@ ids and values are translated segments
 separted by `#`.) For example:
 
 ``` python
-evaluatoradd({
+evaluator.add({
     'bbc.381790#1': 'Waliser AMs sorgen sich um "Aussehen wie Muppets"',
-    'bbc.381790#2': 'Unter einigen AMs herrscht Bestürzung über einen Vorschlag, ...',
-    'bbc.381790#3': 'Sie ist aufgrund von Plänen entstanden, den Namen ...'
+    'bbc.381790#2': 'Unter einigen AMs herrscht Bestürzung über einen...',
+    'bbc.381790#3': 'Sie ist aufgrund von Plänen entstanden, den Namen...'
 })
 ```
 
