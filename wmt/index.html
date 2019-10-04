@@ -36,7 +36,7 @@
     
     
       
-        <title>SQuAD - sotabencheval Docs</title>
+        <title>WMT datasets - sotabencheval Docs</title>
       
     
     
@@ -83,7 +83,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#squad" tabindex="1" class="md-skip">
+      <a href="#wmt-datasets" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -109,7 +109,7 @@
             </span>
             <span class="md-header-nav__topic">
               
-                SQuAD
+                WMT datasets
               
             </span>
           
@@ -236,6 +236,18 @@
       
       
 
+
+  <li class="md-nav__item">
+    <a href="../squad/" title="SQuAD" class="md-nav__link">
+      SQuAD
+    </a>
+  </li>
+
+    
+      
+      
+      
+
   
 
 
@@ -247,11 +259,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        SQuAD
+        WMT datasets
       </label>
     
-    <a href="./" title="SQuAD" class="md-nav__link md-nav__link--active">
-      SQuAD
+    <a href="./" title="WMT datasets" class="md-nav__link md-nav__link--active">
+      WMT datasets
     </a>
     
       
@@ -267,13 +279,6 @@
         <li class="md-nav__item">
   <a href="#getting-started" title="Getting Started" class="md-nav__link">
     Getting Started
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#server-data-location" title="Server Data Location" class="md-nav__link">
-    Server Data Location
   </a>
   
 </li>
@@ -300,6 +305,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#a-full-sotabenchpy-example" title="A Full sotabench.py Example" class="md-nav__link">
+    A Full sotabench.py Example
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#need-more-help" title="Need More Help?" class="md-nav__link">
     Need More Help?
   </a>
@@ -314,18 +326,6 @@
   
 </nav>
     
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item">
-    <a href="../wmt/" title="WMT datasets" class="md-nav__link">
-      WMT datasets
-    </a>
   </li>
 
     
@@ -357,13 +357,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#server-data-location" title="Server Data Location" class="md-nav__link">
-    Server Data Location
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#how-do-i-initialize-an-evaluator" title="How Do I Initialize an Evaluator?" class="md-nav__link">
     How Do I Initialize an Evaluator?
   </a>
@@ -380,6 +373,13 @@
         <li class="md-nav__item">
   <a href="#how-do-i-cache-evaluation" title="How Do I Cache Evaluation?" class="md-nav__link">
     How Do I Cache Evaluation?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-full-sotabenchpy-example" title="A Full sotabench.py Example" class="md-nav__link">
+    A Full sotabench.py Example
   </a>
   
 </li>
@@ -408,10 +408,11 @@
               
                 
                 
-                <h1 id="squad">SQuAD</h1>
-<p><img alt="SQuAD 2.0 Dataset Examples" src="../img/squad20.png" /></p>
-<p>You can view the <a href="https://sotabench.com/benchmarks/question-answering-on-squad11-dev">SQuAD 1.1</a> and
-<a href="https://sotabench.com/benchmarks/question-answering-on-squad20-dev">SQuAD 2.0</a> leaderboards.</p>
+                <h1 id="wmt-datasets">WMT datasets</h1>
+<p>You can view the WMT Machine Translation leaderboards:
+ * <a href="https://sotabench.com/benchmarks/machine-translation-on-wmt2014-english-german">WMT2014 English-German</a>
+ * <a href="https://sotabench.com/benchmarks/machine-translation-on-wmt2014-english-french">WMT2014 English-French</a>
+ * <a href="https://sotabench.com/benchmarks/machine-translation-on-wmt2019-english-german">WMT2019 English-German</a></p>
 <h2 id="getting-started">Getting Started</h2>
 <p>You'll need the following in the root of your repository:</p>
 <ul>
@@ -419,78 +420,92 @@
 <li><code>requirements.txt</code> file - Python dependencies to be installed before running <code>sotabench.py</code></li>
 <li><code>sotabench_setup.sh</code> <em>(optional)</em> - any advanced dependencies or setup, e.g. compilation</li>
 </ul>
-<p>You can write whatever you want in your <code>sotabench.py</code> file to get model predictions on the SQuAD dataset.</p>
+<p>You can write whatever you want in your <code>sotabench.py</code> file to get model predictions on the WMT datasets.</p>
 <p>But you will need to record your results for the server, and you'll want to avoid doing things like
 downloading the dataset on the server. So you should:</p>
 <ul>
-<li><strong>Point to the server SQuAD data path</strong> - popular datasets are pre-downloaded on the server.</li>
 <li><strong>Include an Evaluation object</strong> in <code>sotabench.py</code> file to record the results.</li>
+<li><strong>Point to the server WMT data path</strong> - popular datasets are pre-downloaded on the server.</li>
 <li><strong>Use Caching</strong> <em>(optional)</em> - to speed up evaluation by hashing the first batch of predictions.</li>
 </ul>
 <p>We explain how to do these various steps below.</p>
-<h2 id="server-data-location">Server Data Location</h2>
-<p>The SQuAD development data is located in the root of your repository on the server at <code>.data/nlp/squad</code>.
-In this folder is contained:</p>
-<ul>
-<li><code>dev-v1.1.json</code> - containing SQuAD v1.1 development dataset</li>
-<li><code>dev-v2.0.json</code> - containing SQuAD v2.0 development dataset</li>
-</ul>
-<p>Your local files may have a different file directory structure, so you
-can use control flow like below to change the data path if the script is being
-run on sotabench servers:</p>
-<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">sotabencheval.utils</span> <span class="kn">import</span> <span class="n">is_server</span>
+<h2 id="how-do-i-initialize-an-evaluator">How Do I Initialize an Evaluator?</h2>
+<p>Before you start batching over the dataset and making predictions you need
+to create an evaluator instance to record results for a given leaderboard.
+For example, to evaluate on WMT2014 News English-French test set add this
+to your code:</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">sotabencheval.machine_translation</span> <span class="kn">import</span> <span class="n">WMTEvaluator</span><span class="p">,</span> <span class="n">WMTDataset</span><span class="p">,</span> <span class="n">Language</span>
 
-<span class="k">if</span> <span class="n">is_server</span><span class="p">():</span>
-    <span class="n">DATA_ROOT</span> <span class="o">=</span> <span class="s1">&#39;.data/nlp/squad&#39;</span>
-<span class="k">else</span><span class="p">:</span> <span class="c1"># local settings</span>
-    <span class="n">DATA_ROOT</span> <span class="o">=</span> <span class="s1">&#39;/home/ubuntu/my_data/&#39;</span>
+<span class="n">evaluator</span> <span class="o">=</span> <span class="n">WMTEvaluator</span><span class="p">(</span>
+    <span class="n">dataset</span><span class="o">=</span><span class="n">WMTDataset</span><span class="o">.</span><span class="n">News2014</span><span class="p">,</span>
+    <span class="n">source_lang</span><span class="o">=</span><span class="n">Language</span><span class="o">.</span><span class="n">English</span><span class="p">,</span>
+    <span class="n">target_lang</span><span class="o">=</span><span class="n">Language</span><span class="o">.</span><span class="n">French</span><span class="p">,</span>
+    <span class="n">local_root</span><span class="o">=</span><span class="s1">&#39;mydatasets&#39;</span><span class="p">,</span>
+    <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;My Super Model&#39;</span>
+<span class="p">)</span>
 </pre></div>
 
 
-<p>This will detect if <code>sotabench.py</code> is being run on the server and change behaviour accordingly.</p>
-<h2 id="how-do-i-initialize-an-evaluator">How Do I Initialize an Evaluator?</h2>
-<p>Add this to your code - before you start batching over the dataset and making predictions:</p>
-<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">sotabencheval.question_answering</span> <span class="kn">import</span> <span class="n">SQuADEvaluator</span><span class="p">,</span> <span class="n">SQuADVersion</span>
-
-<span class="c1"># for SQuAD v1.1</span>
-<span class="n">evaluator</span> <span class="o">=</span> <span class="n">SQuADEvaluator</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;My Super Model&#39;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">SQuADVersion</span><span class="o">.</span><span class="n">V11</span><span class="p">)</span>
-<span class="c1"># for SQuAD v2.0</span>
-<span class="n">evaluator</span> <span class="o">=</span> <span class="n">SQuADEvaluator</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;My Super Model&#39;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">SQuADVersion</span><span class="o">.</span><span class="n">V20</span><span class="p">)</span>
+<p>You can use <code>evaluator.source_dataset_path: Path</code> and <code>evaluator.target_dataset_path: Path</code>
+to get paths to the source and target SGML files.
+In the example above the first one resolves to <code>.data/nlp/wmt/newstest2014-fren-src.en.sgm</code> on
+sotabench server and <code>mydatasets/newstest2014-fren-src.en.sgm</code> when run locally.
+If you want to use non-standard file names locally you can override the defaults like this:</p>
+<div class="codehilite"><pre><span></span><span class="n">evaluator</span> <span class="o">=</span> <span class="n">WMTEvaluator</span><span class="p">(</span>
+    <span class="o">...</span><span class="p">,</span>
+    <span class="n">local_root</span><span class="o">=</span><span class="s1">&#39;mydatasets&#39;</span>
+    <span class="n">source_dataset_filename</span><span class="o">=</span><span class="s1">&#39;english.sgm&#39;</span><span class="p">,</span>
+    <span class="n">target_dataset_filename</span><span class="o">=</span><span class="s1">&#39;french.sgm&#39;</span>
+<span class="p">)</span>
 </pre></div>
 
 
 <p>If you are reproducing a model from a paper, then you can enter the arXiv ID. If you
-put in the same model name string as on the
-<a href="https://sotabench.com/benchmarks/question-answering-on-squad11-dev">SQuAD 1.1</a> or
-<a href="https://sotabench.com/benchmarks/question-answering-on-squad20-dev">SQuAD 2.0</a> leaderboard
+put in the same model name string as on the leaderboard
 then you will enable direct comparison with the paper's model. For example:</p>
-<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">sotabencheval.question_answering</span> <span class="kn">import</span> <span class="n">SQuADEvaluator</span><span class="p">,</span> <span class="n">SQuADVersion</span>
-
-<span class="n">evaluator</span> <span class="o">=</span> <span class="n">SQuADEvaluator</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;SpanBERT&#39;</span><span class="p">,</span>
-                           <span class="n">paper_arxiv_id</span><span class="o">=</span><span class="s1">&#39;1907.10529&#39;</span><span class="p">,</span>
-                           <span class="n">version</span><span class="o">=</span><span class="n">SQuADVersion</span><span class="o">.</span><span class="n">V20</span><span class="p">)</span>
+<div class="codehilite"><pre><span></span><span class="n">evaluator</span> <span class="o">=</span> <span class="n">WMTEvaluator</span><span class="p">(</span>
+    <span class="n">dataset</span><span class="o">=</span><span class="n">WMTDataset</span><span class="o">.</span><span class="n">News2019</span><span class="p">,</span>
+    <span class="n">source_lang</span><span class="o">=</span><span class="n">Language</span><span class="o">.</span><span class="n">English</span><span class="p">,</span>
+    <span class="n">target_lang</span><span class="o">=</span><span class="n">Language</span><span class="o">.</span><span class="n">German</span><span class="p">,</span>
+    <span class="n">local_root</span><span class="o">=</span><span class="s2">&quot;mydatasets&quot;</span><span class="p">,</span>
+    <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;Facebook-FAIR (single)&quot;</span><span class="p">,</span>
+    <span class="n">paper_arxiv_id</span><span class="o">=</span><span class="s2">&quot;1907.06616&quot;</span>
+<span class="p">)</span>
 </pre></div>
 
 
 <p>The above will directly compare with the result of the paper when run on the server.</p>
+<p>Instead of parsing the dataset files by yourself you can access raw segments as strings:</p>
+<div class="codehilite"><pre><span></span>    <span class="k">for</span> <span class="n">segment_id</span><span class="p">,</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">source_segments</span><span class="p">:</span>
+        <span class="c1"># translate text</span>
+
+    <span class="c1"># or get segments within document context</span>
+    <span class="k">for</span> <span class="n">document</span> <span class="ow">in</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">source_documents</span><span class="p">:</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="p">[</span><span class="n">segment</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">document</span><span class="o">.</span><span class="n">segments</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">document</span><span class="o">.</span><span class="n">segments</span><span class="p">:</span>
+            <span class="n">segment_id</span><span class="p">,</span> <span class="n">text</span> <span class="o">=</span> <span class="n">segment</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">segment</span><span class="o">.</span><span class="n">text</span>
+            <span class="c1"># translate text in context</span>
+</pre></div>
+
+
 <h2 id="how-do-i-evaluate-predictions">How Do I Evaluate Predictions?</h2>
 <p>The evaluator object has an <code>.add(answers: Dict[str, str])</code> method to submit predictions by batch or in full.</p>
-<p>For SQuAD the expected input is a dictionary, where keys are question ids and values are text answers.
-For unanswerable questions the answer should be an empty string. For example:</p>
-<div class="codehilite"><pre><span></span><span class="p">{</span><span class="s2">&quot;57296d571d04691400779413&quot;</span><span class="p">:</span> <span class="s2">&quot;itself&quot;</span><span class="p">,</span> <span class="s2">&quot;5a89117e19b91f001a626f2d&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">}</span>
+<p>For WMT the expected input is a dictionary, where keys are source segments
+ids and values are translated segments
+(segment id is created by concatenating document id and the original segment id,
+separted by <code>#</code>.) For example:</p>
+<div class="codehilite"><pre><span></span><span class="n">evaluatoradd</span><span class="p">({</span>
+    <span class="s1">&#39;bbc.381790#1&#39;</span><span class="p">:</span> <span class="s1">&#39;Waliser AMs sorgen sich um &quot;Aussehen wie Muppets&quot;&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;bbc.381790#2&#39;</span><span class="p">:</span> <span class="s1">&#39;Unter einigen AMs herrscht Bestürzung über einen Vorschlag, ...&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;bbc.381790#3&#39;</span><span class="p">:</span> <span class="s1">&#39;Sie ist aufgrund von Plänen entstanden, den Namen ...&#39;</span>
+<span class="p">})</span>
 </pre></div>
 
 
 <p>You can do this all at once in a single call to <code>add()</code>, but more naturally, you will
 probably loop over the dataset and call the method for the outputs of each batch.
 That would look something like this (for a PyTorch example):</p>
-<div class="codehilite"><pre><span></span><span class="o">...</span>
-
-<span class="n">evaluator</span> <span class="o">=</span> <span class="n">SQuADEvaluator</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;My Super Model&#39;</span><span class="p">,</span>
-                           <span class="n">paper_arxiv_id</span><span class="o">=</span><span class="s2">&quot;1710.10723&quot;</span><span class="p">,</span>
-                           <span class="n">version</span><span class="o">=</span><span class="n">SQuADVersion</span><span class="o">.</span><span class="n">V11</span><span class="p">)</span>
-
-<span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+<div class="codehilite"><pre><span></span><span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data_loader</span><span class="p">):</span>
         <span class="o">...</span>
         <span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
@@ -537,6 +552,37 @@ example for a PyTorch repository):</p>
 we simply return hashed results rather than running the whole evaluation again.</p>
 <p>Caching is very useful if you have large models, or a repository that is evaluating
 multiple models, as it speeds up evaluation significantly.</p>
+<h2 id="a-full-sotabenchpy-example">A Full sotabench.py Example</h2>
+<p>Below we show an implementation for a model from the torchhub repository. This
+incorporates all the features explained above: (a) using the WMT Evaluator,
+(b) accessing segments from evaluator, and (c) the evaluation caching logic.</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">sotabencheval.machine_translation</span> <span class="kn">import</span> <span class="n">WMTEvaluator</span><span class="p">,</span> <span class="n">WMTDataset</span><span class="p">,</span> <span class="n">Language</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="n">evaluator</span> <span class="o">=</span> <span class="n">WMTEvaluator</span><span class="p">(</span>
+    <span class="n">dataset</span><span class="o">=</span><span class="n">WMTDataset</span><span class="o">.</span><span class="n">News2019</span><span class="p">,</span>
+    <span class="n">source_lang</span><span class="o">=</span><span class="n">Language</span><span class="o">.</span><span class="n">English</span><span class="p">,</span>
+    <span class="n">target_lang</span><span class="o">=</span><span class="n">Language</span><span class="o">.</span><span class="n">German</span><span class="p">,</span>
+    <span class="n">local_root</span><span class="o">=</span><span class="s2">&quot;data/nlp/wmt&quot;</span><span class="p">,</span>
+    <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;Facebook-FAIR (single)&quot;</span><span class="p">,</span>
+    <span class="n">paper_arxiv_id</span><span class="o">=</span><span class="s2">&quot;1907.06616&quot;</span>
+<span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;pytorch/fairseq&#39;</span><span class="p">,</span> <span class="s1">&#39;transformer.wmt19.en-de.single_model&#39;</span><span class="p">,</span>
+    <span class="n">tokenizer</span><span class="o">=</span><span class="s1">&#39;moses&#39;</span><span class="p">,</span> <span class="n">bpe</span><span class="o">=</span><span class="s1">&#39;fastbpe&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">sid</span><span class="p">,</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">evaluator</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">source_segments</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+    <span class="n">translated</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="n">evaluator</span><span class="o">.</span><span class="n">add</span><span class="p">({</span><span class="n">sid</span><span class="p">:</span> <span class="n">translated</span><span class="p">})</span>
+    <span class="k">if</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">cache_exists</span><span class="p">:</span>
+        <span class="k">break</span>
+
+<span class="n">evaluator</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="n">evaluator</span><span class="o">.</span><span class="n">results</span><span class="p">)</span>
+</pre></div>
+
+
 <h2 id="need-more-help">Need More Help?</h2>
 <p>Head on over to the <a href="https://forum.sotabench.com/c/nlp">Natural Language Processing</a> section of the sotabench
 forums if you have any questions or difficulties.</p>
@@ -560,7 +606,7 @@ forums if you have any questions or difficulties.</p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../pascalvoc/" title="PASCAL VOC 2012" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../squad/" title="SQuAD" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -569,25 +615,11 @@ forums if you have any questions or difficulties.</p>
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                PASCAL VOC 2012
+                SQuAD
               </span>
             </div>
           </a>
         
-        
-          <a href="../wmt/" title="WMT datasets" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
-                  Next
-                </span>
-                WMT datasets
-              </span>
-            </div>
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
-            </div>
-          </a>
         
       </nav>
     </div>
