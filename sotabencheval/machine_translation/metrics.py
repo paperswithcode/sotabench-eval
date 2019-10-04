@@ -45,7 +45,7 @@ class TranslationMetrics:
         answers = [self.answers.get(sid, "") for sid in target_sentences]
         bleu = corpus_bleu(answers, references)
         self._results = {
-            'BLEU': bleu.score / 100.0
+            'BLEU': bleu.score
         }
 
     @property
