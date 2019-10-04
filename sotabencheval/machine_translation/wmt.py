@@ -15,9 +15,9 @@ class WMTDataset(Enum):
 class WMTEvaluator(BaseEvaluator):
     task = "Machine Translation"
     _datasets = {
-        (WMTDataset.News2014, Language.English, Language.German): "WMT2014 English German",
-        (WMTDataset.News2019, Language.English, Language.German): "WMT2019 English German",
-        (WMTDataset.News2014, Language.English, Language.French): "WMT2014 English French",
+        (WMTDataset.News2014, Language.English, Language.German),
+        (WMTDataset.News2019, Language.English, Language.German),
+        (WMTDataset.News2014, Language.English, Language.French),
     }
 
     def __init__(self,
@@ -63,6 +63,18 @@ class WMTEvaluator(BaseEvaluator):
             raise ValueError("Unknown dataset: {}".format(self.dataset))
         return source, target
 
+    def _get_dataset_name(self):
+        cfg = (self.dataset, self.source_lang, self.target_lang)
+        if cfg not in WMTEvaluator._datasets:
+            raise ValueError("Unsupported dataset configuration: {} {} {}".format(
+                self.dataset.name,
+                self.source_lang.name,
+                self.target_lang.name
+            ))
+
+        ds_names = {WMTDataset.News2014: "WMT2014", WMTDataset.News2019: "WMT2019"}
+        return "{0} {1}-{2}".format(ds_names.get(self.dataset), self.source_lang.fullname, self.target_lang.fullname)
+
     def add(self, answers: Dict[str, str]):
         self.metrics.add(answers)
 
@@ -83,14 +95,6 @@ class WMTEvaluator(BaseEvaluator):
         return self.results
 
     def save(self):
-        cfg = (self.dataset, self.source_lang, self.target_lang)
-        if cfg not in WMTEvaluator._datasets:
-            raise ValueError("Unsupported dataset configuration: {} {} {}".format(
-                self.dataset.name,
-                self.source_lang.name,
-                self.target_lang.name
-            ))
-
-        dataset = WMTEvaluator._datasets.get(cfg)
+        dataset = self._get_dataset_name()
         return super().save(dataset=dataset)
 
