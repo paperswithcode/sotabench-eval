@@ -3,7 +3,10 @@ from bs4 import BeautifulSoup
 from pathlib import Path
 from typing import Dict, List
 from collections import OrderedDict
-from nltk.translate.bleu_score import sentence_bleu
+from sacrebleu import corpus_bleu
+
+
+MIN_CACHE_BATCH_SIZE = 32
 
 
 class TranslationMetrics:
@@ -38,18 +41,16 @@ class TranslationMetrics:
             target_sentences = {sid: text for sid, text in self._target_sentences.items() if sid in keep}
         else:
             target_sentences = self._target_sentences
-        scores = []
-        for sid, target in target_sentences.items():
-            answer = self.answers.get(sid, "")
-            score = sentence_bleu([target], answer)
-            scores.append(score)
+        references = [[target for target in target_sentences.values()]]
+        answers = [self.answers.get(sid, "") for sid in target_sentences]
+        bleu = corpus_bleu(answers, references)
         self._results = {
-            'BLEU': sum(scores) / len(scores)
+            'BLEU': bleu.score / 100.0
         }
 
     @property
     def has_data(self):
-        return bool(self.answers)
+        return len(self.answers) >= MIN_CACHE_BATCH_SIZE
 
     def get_results(self, ignore_missing=False):
         self.evaluate(ignore_missing)
