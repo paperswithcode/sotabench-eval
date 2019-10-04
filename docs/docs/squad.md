@@ -52,7 +52,6 @@ This will detect if `sotabench.py` is being run on the server and change behavio
 Add this to your code - before you start batching over the dataset and making predictions:
 
 ``` python
-``` python
 from sotabencheval.question_answering import SQuADEvaluator, SQuADVersion
 
 # for SQuAD v1.1
@@ -68,12 +67,11 @@ put in the same model name string as on the
 then you will enable direct comparison with the paper's model. For example:
 
 ``` python
-``` python
 from sotabencheval.question_answering import SQuADEvaluator, SQuADVersion
 
-evaluator = SQuADEvaluator(model_name='My Super Model',
-                           paper_arxiv_id="1710.10723",
-                           version=SQuADVersion.V11)
+evaluator = SQuADEvaluator(model_name='SpanBERT',
+                           paper_arxiv_id='1907.10529',
+                           version=SQuADVersion.V20)
 ```
 
 The above will directly compare with the result of the paper when run on the server.
