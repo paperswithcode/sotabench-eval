@@ -21,6 +21,7 @@ class BaseEvaluator:
         self.batch_hash = None
         self.cached_results = False
         self.results = None
+        self._cache_exists = None
 
     @property
     def cache_exists(self):
@@ -54,11 +55,14 @@ class BaseEvaluator:
         :return: bool or None (if not in check mode)
         """
 
-        if not self.first_batch_processed:
-            raise ValueError('No batches of data have been processed so no batch_hash exists')
-
         if not is_server():  # we only check the cache on the server
             return None
+
+        if not self.first_batch_processed:
+            return False
+
+        if self._cache_exists is not None:
+            return self._cache_exists
 
         client = Client.public()
         cached_res = client.get_results_by_run_hash(self.batch_hash)
@@ -69,9 +73,10 @@ class BaseEvaluator:
                 "No model change detected (using the first batch run "
                 "hash). Will use cached results."
             )
-            return True
-
-        return False
+            self._cache_exists = True
+        else:
+            self._cache_exists = False
+        return self._cache_exists
 
     def cache_values(self, **kwargs):
         return cache_value(kwargs)
