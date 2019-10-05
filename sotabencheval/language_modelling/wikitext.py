@@ -22,7 +22,7 @@ def to_numpy(*args):
         return a 
     return [convert(a) for a in args]
 
-class LMDataset(Enum):
+class WikiTextDataset(Enum):
     WikiText103 = ('WikiText-103', 245569, 267735)
     WikiText2 = ('WikiText-2', 245569, 33278)
     
@@ -39,7 +39,19 @@ class LMDataset(Enum):
         if not dataset_path.exists(): # unzip
             extract_archive(str(root / zip_name), to_path=root.parent)
         return dataset_path
-        
+def gether_probs(log_probabilities, targets):
+    if hasattr(log_probabilities, 'cpu') and hasattr(log_probabilities, 'numpy'):
+        probs = log_probabilities.gather(-1,
+                                            targets.unsqueeze(-1))
+        self._neglogloss += - probs.sum().cpu().item()
+        self._data_set_size += int(targets.numel())
+    else: # fall back to numpy implementation that is 4 times slower than pytorch
+        vocab_sz = int(log_probabilities.shape[-1])
+        log_probabilities, targets =  to_numpy(log_probabilities, targets)
+        log_probabilities = log_probabilities.reshape(-1, vocab_sz)
+        targets = targets.reshape(-1)
+        probs = log_probabilities[np.arange(log_probabilities.shape[0]), targets]
+    return probs, targets     
 class WikiTextEvaluator(BaseEvaluator):
     task = "Language Modelling"
     dataset = None # defined in subclass
@@ -52,11 +64,15 @@ class WikiTextEvaluator(BaseEvaluator):
                  paper_results: dict = None,
                  model_description=None,
                  text_transformation: bool = False,
-                 subword_tokenization: bool = False):
+                 subword_tokenization: bool = False,
+                 dataset=None):
 
         super().__init__(model_name, paper_arxiv_id,
                          paper_pwc_id, paper_results, model_description)
-
+        if dataset is not None:
+            self.dataset = dataset
+        self.subword_tokenization = subword_tokenization
+        self.text_transformation = text_transformation
         self.local_root = local_root 
         self.reset()
     
@@ -69,25 +85,23 @@ class WikiTextEvaluator(BaseEvaluator):
         self._data_set_size = 0 
     
     def add(self, log_probabilities, targets):
-        if hasattr(log_probabilities, 'cpu') and hasattr(log_probabilities, 'numpy'):
-            probs = log_probabilities.gather(-1,
-                                             targets.unsqueeze(-1))
-            self._neglogloss += - probs.sum().cpu().item()
-            self._data_set_size += int(targets.numel())
-        else: # fall back to numpy implementation that is 4 times slower than pytorch
-            vocab_sz = int(log_probabilities.shape[-1])
-            log_probabilities, targets =  to_numpy(log_probabilities, targets)
-            log_probabilities = log_probabilities.reshape(-1, vocab_sz)
-            targets = targets.reshape(-1)
-            probs = log_probabilities[np.arange(log_probabilities.shape[0]), targets]
-            self._neglogloss += - probs.sum()
-            self._data_set_size += int(targets.shape[0])
+        if log_probabilities.shape[:-1] == targets.shape:
+            log_probabilities, targets = gether_probs(log_probabilities, targets)
+        else:
+            assert log_probabilities.shape == targets.shape, "log_probs have to be ether gethered log probabilities of targets or all probablities" 
+        self._neglogloss += - float(log_probabilities.sum())
+        self._data_set_size += int(targets.shape[0])
 
         if not self.first_batch_processed:
-            content = self.cache_values(probs=to_numpy(probs)[0].reshape(-1))
+            content = self.cache_values(
+                probs=to_numpy(log_probabilities)[0].reshape(-1))
             self.batch_hash = calculate_batch_hash(content)
             self.first_batch_processed = True
         return self.results
+    
+    def print_stats(self):
+        print("Perplexity:", np.exp(self._neglogloss / self.dataset.testset_size), 
+              "NeglogLoss:", self._neglogloss, "Tokens Count:", self._data_set_size)
 
     def get_results(self):
         if self.cached_results:
@@ -105,7 +119,7 @@ class WikiTextEvaluator(BaseEvaluator):
 
 
 class WikiText103Evaluator(WikiTextEvaluator):
-    dataset = LMDataset.WikiText103
+    dataset = WikiTextDataset.WikiText103
 
 class WikiText2Evaluator(WikiTextEvaluator):
-    dataset = LMDataset.WikiText2
+    dataset = WikiTextDataset.WikiText2
