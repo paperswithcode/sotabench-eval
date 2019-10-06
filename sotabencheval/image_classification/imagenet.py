@@ -265,8 +265,11 @@ class ImageNetEvaluator(object):
                 'ILSVRC2012_val_00000294': np.array([-2.3677, ...])})
         """
 
-        self.update_inference_time()
+        if not output_dict:
+            print('Empty output_dict; will not process')
+            return
 
+        self.update_inference_time()
         self.outputs = dict(list(self.outputs.items()) + list(output_dict.items()))
 
         for i, dict_key in enumerate(output_dict.keys()):

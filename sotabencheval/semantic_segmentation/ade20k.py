@@ -155,6 +155,8 @@ class ADE20KEvaluator(object):
         if not is_server():
             return None
 
+        self.speed_mem_metrics['Tasks Per Second (Partial)'] = len(self.inference_speed.count) / self.inference_speed.sum
+
         client = Client.public()
         cached_res = client.get_results_by_run_hash(self.batch_hash)
         if cached_res:
