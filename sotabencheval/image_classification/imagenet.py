@@ -6,6 +6,7 @@ import pickle
 from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult, check_inputs
 import tqdm
+import time
 
 from sotabencheval.utils import AverageMeter, calculate_batch_hash, download_url, change_root_if_server, is_server
 from sotabencheval.image_classification.utils import top_k_accuracy_score
@@ -155,6 +156,15 @@ class ImageNetEvaluator(object):
         self.batch_hash = None
         self.cached_results = False
 
+        self.inference_time = AverageMeter()
+        self.start_time = time.time()
+        self.speed_mem_metrics = {
+            'Tasks Per Second (Partial)': None,
+            'Tasks Per Second (Total)': None,
+            'Memory Allocated (Partial)': None,
+            'Memory Allocated (Partial)': None
+        }
+
     @property
     def cache_exists(self):
         """
@@ -196,11 +206,14 @@ class ImageNetEvaluator(object):
         if not is_server():  # we only check the cache on the server
             return None
 
+        self.speed_mem_metrics['Tasks Per Second (Partial)'] = len(self.outputs)/self.inference_speed.sum
+
         client = Client.public()
         cached_res = client.get_results_by_run_hash(self.batch_hash)
         if cached_res:
             self.results = cached_res
             self.cached_results = True
+
             print(
                 "No model change detected (using the first batch run "
                 "hash). Will use cached results."
@@ -223,6 +236,18 @@ class ImageNetEvaluator(object):
         with open(os.path.join(self.root, 'imagenet_val_targets.pkl'), 'rb') as handle:
             self.targets = pickle.load(handle)
 
+    def update_inference_time(self):
+
+        if not self.outputs and self.inference_time.count < 1:
+            # assuming this is the first time the evaluator is called
+            self.inference_time.update(time.time() - self.start_time)
+        elif not self.outputs and self.inference_time.count > 0:
+            # assuming the user has cleared outputs, and is then readding (evaluation post batching)
+            pass
+        else:
+            # if there are outputs and the inference time count is > 0
+            self.inference_time.update(time.time() - self.start_time)
+
     def add(self, output_dict: dict):
         """
         Updates the evaluator with new results
@@ -239,6 +264,8 @@ class ImageNetEvaluator(object):
                 my_evaluator.add({'ILSVRC2012_val_00000293': np.array([1.04243, ...]),
                 'ILSVRC2012_val_00000294': np.array([-2.3677, ...])})
         """
+
+        self.update_inference_time()
 
         self.outputs = dict(list(self.outputs.items()) + list(output_dict.items()))
 
@@ -297,6 +324,7 @@ class ImageNetEvaluator(object):
             self.top5.update(prec5, 1)
 
         self.results = {'Top 1 Accuracy': self.top1.avg, 'Top 5 Accuracy': self.top5.avg}
+        self.speed_mem_metrics['Tasks Per Second (Total)'] = len(self.outputs) / self.inference_speed.sum
 
         return self.results
 
@@ -318,6 +346,7 @@ class ImageNetEvaluator(object):
             config={},
             dataset='ImageNet',
             results=self.results,
+            speed_mem_metrics=self.speed_mem_metrics,
             model=self.model_name,
             model_description=self.model_description,
             arxiv_id=self.paper_arxiv_id,
