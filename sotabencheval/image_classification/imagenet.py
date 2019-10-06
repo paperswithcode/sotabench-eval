@@ -287,6 +287,8 @@ class ImageNetEvaluator(object):
             self.batch_hash = calculate_batch_hash(hash_dict)
             self.first_batch_processed = True
 
+        self.start_time = time.time()
+
     def get_results(self):
         """
         Gets the results for the evaluator. This method only runs if predictions for all 5,000 ImageNet validation

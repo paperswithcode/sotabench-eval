@@ -103,6 +103,8 @@ class WMTEvaluator(BaseEvaluator):
             )
             self.first_batch_processed = True
 
+        self.start_time = time.time()
+
     def reset(self):
         self.metrics.reset()
 

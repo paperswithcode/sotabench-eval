@@ -245,6 +245,8 @@ class ADE20KEvaluator(object):
                 np.around(np.array([acc_global.item(), iu.mean().item()]), 3)))
             self.first_batch_processed = True
 
+        self.start_time = time.time()
+
     def get_results(self):
         """
         Reruns the evaluation using the accumulated detections, returns ADE20K results with IOU and

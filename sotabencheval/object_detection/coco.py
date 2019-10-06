@@ -273,6 +273,8 @@ class COCOEvaluator(object):
                     self.cache_values(annotations=detections, metrics=get_coco_metrics(self.coco_evaluator)))
                 self.first_batch_processed = True
 
+        self.start_time = time.time()
+
     def get_results(self):
         """
         Reruns the evaluation using the accumulated detections, returns COCO results with AP metrics
