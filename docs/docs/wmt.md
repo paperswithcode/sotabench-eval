@@ -172,6 +172,7 @@ multiple models, as it speeds up evaluation significantly.
 Below we show an implementation for a model from the torchhub repository. This
 incorporates all the features explained above: (a) using the WMT Evaluator,
 (b) accessing segments from evaluator, and (c) the evaluation caching logic.
+For clarity we omit batching and simply translate segment by segment.
 
 ``` python
 from sotabencheval.machine_translation import WMTEvaluator, WMTDataset, Language
@@ -188,7 +189,7 @@ evaluator = WMTEvaluator(
 )
 
 model = torch.hub.load('pytorch/fairseq', 'transformer.wmt19.en-de.single_model',
-    tokenizer='moses', bpe='fastbpe').cuda()
+    force_reload=True, tokenizer='moses', bpe='fastbpe').cuda()
 
 for sid, text in tqdm(evaluator.metrics.source_segments.items()):
     translated = model.translate(text)
