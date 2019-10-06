@@ -130,7 +130,7 @@ class PASCALVOCEvaluator(object):
         if not is_server():
             return None
 
-        self.speed_mem_metrics['Tasks Per Second (Partial)'] = len(self.inference_speed.count) / self.inference_speed.sum
+        self.speed_mem_metrics['Tasks Per Second (Partial)'] = len(self.inference_time.count) / self.inference_time.sum
 
         client = Client.public()
         cached_res = client.get_results_by_run_hash(self.batch_hash)
@@ -243,7 +243,7 @@ class PASCALVOCEvaluator(object):
                    "Mean IOU": iu.mean().item(),
                }
 
-        self.speed_mem_metrics['Tasks Per Second (Total)'] = len(self.inference_speed.count) / self.inference_speed.sum
+        self.speed_mem_metrics['Tasks Per Second (Total)'] = len(self.inference_time.count) / self.inference_time.sum
 
         return self.results
 

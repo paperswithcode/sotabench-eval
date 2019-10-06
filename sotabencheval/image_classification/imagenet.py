@@ -206,7 +206,7 @@ class ImageNetEvaluator(object):
         if not is_server():  # we only check the cache on the server
             return None
 
-        self.speed_mem_metrics['Tasks Per Second (Partial)'] = len(self.outputs)/self.inference_speed.sum
+        self.speed_mem_metrics['Tasks Per Second (Partial)'] = len(self.outputs)/self.inference_time.sum
 
         client = Client.public()
         cached_res = client.get_results_by_run_hash(self.batch_hash)
@@ -329,7 +329,7 @@ class ImageNetEvaluator(object):
             self.top5.update(prec5, 1)
 
         self.results = {'Top 1 Accuracy': self.top1.avg, 'Top 5 Accuracy': self.top5.avg}
-        self.speed_mem_metrics['Tasks Per Second (Total)'] = len(self.outputs) / self.inference_speed.sum
+        self.speed_mem_metrics['Tasks Per Second (Total)'] = len(self.outputs) / self.inference_time.sum
 
         return self.results
 

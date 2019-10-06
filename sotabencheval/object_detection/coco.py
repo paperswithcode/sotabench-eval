@@ -173,7 +173,7 @@ class COCOEvaluator(object):
             return None
 
         unique_image_ids = set([d['image_id'] for d in self.detections])
-        self.speed_mem_metrics['Tasks Per Second (Partial)'] = len(unique_image_ids)/self.inference_speed.sum
+        self.speed_mem_metrics['Tasks Per Second (Partial)'] = len(unique_image_ids)/self.inference_time.sum
 
         client = Client.public()
         cached_res = client.get_results_by_run_hash(self.batch_hash)
@@ -293,7 +293,7 @@ class COCOEvaluator(object):
 
         self.results = get_coco_metrics(self.coco_evaluator)
         unique_image_ids = set([d['image_id'] for d in self.detections])
-        self.speed_mem_metrics['Tasks Per Second (Total)'] = len(unique_image_ids) / self.inference_speed.sum
+        self.speed_mem_metrics['Tasks Per Second (Total)'] = len(unique_image_ids) / self.inference_time.sum
 
         return self.results
 

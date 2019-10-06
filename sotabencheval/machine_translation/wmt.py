@@ -96,7 +96,7 @@ class WMTEvaluator(BaseEvaluator):
         self.metrics.add(answers)
 
         if not self.first_batch_processed and self.metrics.has_data:
-            self.speed_mem_metrics['Tasks Per Second (Partial)'] = len(self.metrics.answers) / self.inference_speed.sum
+            self.speed_mem_metrics['Tasks Per Second (Partial)'] = len(self.metrics.answers) / self.inference_time.sum
             self.batch_hash = calculate_batch_hash(
                 self.cache_values(answers=self.metrics.answers,
                                   metrics=self.metrics.get_results(ignore_missing=True))
@@ -112,7 +112,7 @@ class WMTEvaluator(BaseEvaluator):
         if self.cached_results:
             return self.results
         self.results = self.metrics.get_results()
-        self.speed_mem_metrics['Tasks Per Second (Total)'] = len(self.metrics.answers) / self.inference_speed.sum
+        self.speed_mem_metrics['Tasks Per Second (Total)'] = len(self.metrics.answers) / self.inference_time.sum
 
         return self.results
 
