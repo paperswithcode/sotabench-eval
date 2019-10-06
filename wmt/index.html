@@ -36,7 +36,7 @@
     
     
       
-        <title>WMT datasets - sotabencheval Docs</title>
+        <title>WMT - sotabencheval Docs</title>
       
     
     
@@ -83,7 +83,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#wmt-datasets" tabindex="1" class="md-skip">
+      <a href="#wmt" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -109,7 +109,7 @@
             </span>
             <span class="md-header-nav__topic">
               
-                WMT datasets
+                WMT
               
             </span>
           
@@ -259,11 +259,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        WMT datasets
+        WMT
       </label>
     
-    <a href="./" title="WMT datasets" class="md-nav__link md-nav__link--active">
-      WMT datasets
+    <a href="./" title="WMT" class="md-nav__link md-nav__link--active">
+      WMT
     </a>
     
       
@@ -408,11 +408,13 @@
               
                 
                 
-                <h1 id="wmt-datasets">WMT datasets</h1>
-<p>You can view the WMT Machine Translation leaderboards:
- * <a href="https://sotabench.com/benchmarks/machine-translation-on-wmt2014-english-german">WMT2014 English-German</a>
- * <a href="https://sotabench.com/benchmarks/machine-translation-on-wmt2014-english-french">WMT2014 English-French</a>
- * <a href="https://sotabench.com/benchmarks/machine-translation-on-wmt2019-english-german">WMT2019 English-German</a></p>
+                <h1 id="wmt">WMT</h1>
+<p>You can view the WMT Machine Translation leaderboards:</p>
+<ul>
+<li><a href="https://sotabench.com/benchmarks/machine-translation-on-wmt2014-english-german">WMT2014 English-German</a></li>
+<li><a href="https://sotabench.com/benchmarks/machine-translation-on-wmt2014-english-french">WMT2014 English-French</a></li>
+<li><a href="https://sotabench.com/benchmarks/machine-translation-on-wmt2019-english-german">WMT2019 English-German</a></li>
+</ul>
 <h2 id="getting-started">Getting Started</h2>
 <p>You'll need the following in the root of your repository:</p>
 <ul>
@@ -494,10 +496,10 @@ then you will enable direct comparison with the paper's model. For example:</p>
 ids and values are translated segments
 (segment id is created by concatenating document id and the original segment id,
 separted by <code>#</code>.) For example:</p>
-<div class="codehilite"><pre><span></span><span class="n">evaluatoradd</span><span class="p">({</span>
+<div class="codehilite"><pre><span></span><span class="n">evaluator</span><span class="o">.</span><span class="n">add</span><span class="p">({</span>
     <span class="s1">&#39;bbc.381790#1&#39;</span><span class="p">:</span> <span class="s1">&#39;Waliser AMs sorgen sich um &quot;Aussehen wie Muppets&quot;&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;bbc.381790#2&#39;</span><span class="p">:</span> <span class="s1">&#39;Unter einigen AMs herrscht Bestürzung über einen Vorschlag, ...&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;bbc.381790#3&#39;</span><span class="p">:</span> <span class="s1">&#39;Sie ist aufgrund von Plänen entstanden, den Namen ...&#39;</span>
+    <span class="s1">&#39;bbc.381790#2&#39;</span><span class="p">:</span> <span class="s1">&#39;Unter einigen AMs herrscht Bestürzung über einen...&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;bbc.381790#3&#39;</span><span class="p">:</span> <span class="s1">&#39;Sie ist aufgrund von Plänen entstanden, den Namen...&#39;</span>
 <span class="p">})</span>
 </pre></div>
 
@@ -555,7 +557,8 @@ multiple models, as it speeds up evaluation significantly.</p>
 <h2 id="a-full-sotabenchpy-example">A Full sotabench.py Example</h2>
 <p>Below we show an implementation for a model from the torchhub repository. This
 incorporates all the features explained above: (a) using the WMT Evaluator,
-(b) accessing segments from evaluator, and (c) the evaluation caching logic.</p>
+(b) accessing segments from evaluator, and (c) the evaluation caching logic.
+For clarity we omit batching and simply translate segment by segment.</p>
 <div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">sotabencheval.machine_translation</span> <span class="kn">import</span> <span class="n">WMTEvaluator</span><span class="p">,</span> <span class="n">WMTDataset</span><span class="p">,</span> <span class="n">Language</span>
 <span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
 <span class="kn">import</span> <span class="nn">torch</span>
@@ -570,7 +573,7 @@ incorporates all the features explained above: (a) using the WMT Evaluator,
 <span class="p">)</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;pytorch/fairseq&#39;</span><span class="p">,</span> <span class="s1">&#39;transformer.wmt19.en-de.single_model&#39;</span><span class="p">,</span>
-    <span class="n">tokenizer</span><span class="o">=</span><span class="s1">&#39;moses&#39;</span><span class="p">,</span> <span class="n">bpe</span><span class="o">=</span><span class="s1">&#39;fastbpe&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+    <span class="n">force_reload</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="s1">&#39;moses&#39;</span><span class="p">,</span> <span class="n">bpe</span><span class="o">=</span><span class="s1">&#39;fastbpe&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
 
 <span class="k">for</span> <span class="n">sid</span><span class="p">,</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">evaluator</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">source_segments</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
     <span class="n">translated</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
