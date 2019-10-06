@@ -88,7 +88,7 @@ class PASCALVOCEvaluator(object):
             'Tasks Per Second (Partial)': None,
             'Tasks Per Second (Total)': None,
             'Memory Allocated (Partial)': None,
-            'Memory Allocated (Partial)': None
+            'Memory Allocated (Total)': None
         }
 
 
