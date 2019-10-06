@@ -3,7 +3,7 @@ from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult, check_inputs
 import time
 
-from sotabencheval.utils import calculate_batch_hash, is_server, AverageMeter
+from sotabencheval.utils import calculate_batch_hash, is_server, AverageMeter, get_max_memory_allocated
 from sotabencheval.semantic_segmentation.utils import ConfusionMatrix
 
 
@@ -269,6 +269,7 @@ class ADE20KEvaluator(object):
                }
 
         self.speed_mem_metrics['Tasks Per Second (Total)'] = len(self.inference_time.count) / self.inference_time.sum
+        self.speed_mem_metrics['Max Memory Allocated (Total)'] = get_max_memory_allocated()
 
         return self.results
 

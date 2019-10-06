@@ -9,6 +9,7 @@ import tqdm
 import time
 
 from sotabencheval.utils import AverageMeter, calculate_batch_hash, download_url, change_root_if_server, is_server
+from sotabencheval.utils import get_max_memory_allocated
 from sotabencheval.image_classification.utils import top_k_accuracy_score
 
 ARCHIVE_DICT = {
@@ -330,6 +331,7 @@ class ImageNetEvaluator(object):
 
         self.results = {'Top 1 Accuracy': self.top1.avg, 'Top 5 Accuracy': self.top5.avg}
         self.speed_mem_metrics['Tasks Per Second (Total)'] = len(self.outputs) / self.inference_time.sum
+        self.speed_mem_metrics['Max Memory Allocated (Total)'] = get_max_memory_allocated()
 
         return self.results
 

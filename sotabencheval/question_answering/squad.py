@@ -1,5 +1,5 @@
 from sotabencheval.core import BaseEvaluator
-from sotabencheval.utils import calculate_batch_hash, change_root_if_server, is_server
+from sotabencheval.utils import calculate_batch_hash, change_root_if_server, is_server, get_max_memory_allocated
 from sotabencheval.question_answering.utils import *
 from typing import Dict
 from enum import Enum
@@ -71,6 +71,8 @@ class SQuADEvaluator(BaseEvaluator):
             return self.results
         self.results = self.metrics.get_results()
         self.speed_mem_metrics['Tasks Per Second (Total)'] = len(self.metrics.answers) / self.inference_time.sum
+        self.speed_mem_metrics['Max Memory Allocated (Total)'] = get_max_memory_allocated()
+
         return self.results
 
     def save(self):

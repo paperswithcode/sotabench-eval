@@ -86,6 +86,15 @@ def set_env_on_server(env_name, value):
     return False
 
 
+def get_max_memory_allocated(device='cuda'):
+    try:
+        import torch
+        max_mem = torch.cuda.max_memory_allocated(device='cuda')
+        torch.cuda.reset_max_memory_allocated(device='cuda')
+        return max_mem
+    except ImportError:
+        return None
+
 # below utilities are taken from the torchvision repository
 
 

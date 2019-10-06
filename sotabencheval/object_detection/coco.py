@@ -9,7 +9,7 @@ from sotabenchapi.core import BenchmarkResult, check_inputs
 import time
 
 from sotabencheval.utils import calculate_batch_hash, extract_archive, change_root_if_server, is_server
-from sotabencheval.utils import AverageMeter
+from sotabencheval.utils import AverageMeter, get_max_memory_allocated
 from sotabencheval.object_detection.coco_eval import CocoEvaluator
 from sotabencheval.object_detection.utils import get_coco_metrics
 
@@ -294,6 +294,7 @@ class COCOEvaluator(object):
         self.results = get_coco_metrics(self.coco_evaluator)
         unique_image_ids = set([d['image_id'] for d in self.detections])
         self.speed_mem_metrics['Tasks Per Second (Total)'] = len(unique_image_ids) / self.inference_time.sum
+        self.speed_mem_metrics['Max Memory Allocated (Total)'] = get_max_memory_allocated()
 
         return self.results
 
