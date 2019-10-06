@@ -1,8 +1,9 @@
 import numpy as np
 from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult, check_inputs
+import time
 
-from sotabencheval.utils import calculate_batch_hash, is_server
+from sotabencheval.utils import calculate_batch_hash, is_server, AverageMeter
 from sotabencheval.semantic_segmentation.utils import ConfusionMatrix
 
 
@@ -81,6 +82,16 @@ class PASCALVOCEvaluator(object):
         self.batch_hash = None
         self.cached_results = False
 
+        self.inference_time = AverageMeter()
+        self.start_time = time.time()
+        self.speed_mem_metrics = {
+            'Tasks Per Second (Partial)': None,
+            'Tasks Per Second (Total)': None,
+            'Memory Allocated (Partial)': None,
+            'Memory Allocated (Partial)': None
+        }
+
+
     @property
     def cache_exists(self):
         """
@@ -119,6 +130,8 @@ class PASCALVOCEvaluator(object):
         if not is_server():
             return None
 
+        self.speed_mem_metrics['Tasks Per Second (Partial)'] = len(self.inference_speed.count) / self.inference_speed.sum
+
         client = Client.public()
         cached_res = client.get_results_by_run_hash(self.batch_hash)
         if cached_res:
@@ -131,6 +144,18 @@ class PASCALVOCEvaluator(object):
             return True
 
         return False
+
+    def update_inference_time(self):
+
+        if not self.outputs and self.inference_time.count < 1:
+            # assuming this is the first time the evaluator is called
+            self.inference_time.update(time.time() - self.start_time)
+        elif not self.outputs and self.inference_time.count > 0:
+            # assuming the user has reset outputs, and is then readding (evaluation post batching)
+            pass
+        else:
+            # if there are outputs and the inference time count is > 0
+            self.inference_time.update(time.time() - self.start_time)
 
     def add(self, outputs: np.ndarray, targets: np.ndarray):
         """
@@ -182,6 +207,7 @@ class PASCALVOCEvaluator(object):
         :return: void - updates self.voc_evaluator with the data, and updates self.targets and self.outputs
         """
 
+        self.update_inference_time()
         self.voc_evaluator.update(targets, outputs)
 
         self.targets = np.append(self.targets, targets)
@@ -193,6 +219,8 @@ class PASCALVOCEvaluator(object):
                 np.append(np.around(targets, 3), np.around(outputs, 3)),
                 np.around(np.array([acc_global.item(), iu.mean().item()]), 3)))
             self.first_batch_processed = True
+
+        self.start_time = time.time()
 
     def get_results(self):
         """
@@ -215,6 +243,8 @@ class PASCALVOCEvaluator(object):
                    "Mean IOU": iu.mean().item(),
                }
 
+        self.speed_mem_metrics['Tasks Per Second (Total)'] = len(self.inference_speed.count) / self.inference_speed.sum
+
         return self.results
 
     def save(self):
@@ -235,6 +265,7 @@ class PASCALVOCEvaluator(object):
             config={},
             dataset='PASCAL VOC 2012 val',
             results=self.results,
+            speed_mem_metrics=self.speed_mem_metrics,
             model=self.model_name,
             model_description=self.model_description,
             arxiv_id=self.paper_arxiv_id,
