@@ -85,7 +85,15 @@ class WikiTextEvaluator(BaseEvaluator):
         self._data_set_size = 0 
     
     def add(self, log_probabilities, targets):
-        if log_probabilities.shape[:-1] == targets.shape:
+        """
+            log_probabilietes - 
+                float - summed log probability of targets
+                [bs x bptt] array of floats - log probability of each target log_proabilites.shape == targets.shape
+                [bs x bptt x vocab_size]  - og probability of each word, we will gather correct probablites based on target
+        """
+        if isinstance(log_probabilities, float):
+            log_probabilities = np.array([log_probabilities]) #  for sum to work
+        elif log_probabilities.shape[:-1] == targets.shape:
             log_probabilities, targets = gether_probs(log_probabilities, targets)
         else:
             assert log_probabilities.shape == targets.shape, "log_probs have to be ether gethered log probabilities of targets or all probablities" 
