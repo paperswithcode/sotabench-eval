@@ -20,7 +20,7 @@ def read_csv(path):
 def get_path(local_root, local_unzip=False):
     root = Path(change_root_if_server(root=local_root,
                                       server_root=".data/nlp/multinli"))
-    zip_name = "multinli_1.0.zip"
+    zip_name = "MNLI.zip"
     dataset_path=root / "MNLI" / "dev_matched.tsv"
     if not dataset_path.exists():  # unzip
         extract_archive(str(root / zip_name), to_path=root)
