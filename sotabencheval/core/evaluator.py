@@ -86,7 +86,7 @@ class BaseEvaluator:
                 self.add(**results)
             else:
                 self.add(*results)
-            if self.cache_exists:
+            if self.first_batch_processed and self.cache_exists:
                 break
         return self.save()
 

@@ -1,5 +1,3 @@
-# Some of the processing logic here is based on the torchvision COCO dataset
-
 import os
 from itertools import islice
 from enum import Enum
@@ -39,6 +37,8 @@ class WikiTextDataset(Enum):
         if not dataset_path.exists(): # unzip
             extract_archive(str(root / zip_name), to_path=root.parent)
         return dataset_path
+
+
 def gether_probs(log_probabilities, targets):
     if hasattr(log_probabilities, 'cpu') and hasattr(log_probabilities, 'numpy'):
         probs = log_probabilities.gather(-1,
@@ -52,6 +52,8 @@ def gether_probs(log_probabilities, targets):
         targets = targets.reshape(-1)
         probs = log_probabilities[np.arange(log_probabilities.shape[0]), targets]
     return probs, targets     
+
+    
 class WikiTextEvaluator(BaseEvaluator):
     task = "Language Modelling"
     dataset = None # defined in subclass
@@ -96,7 +98,7 @@ class WikiTextEvaluator(BaseEvaluator):
         elif log_probabilities.shape[:-1] == targets.shape:
             log_probabilities, targets = gether_probs(log_probabilities, targets)
         else:
-            assert log_probabilities.shape == targets.shape, "log_probs have to be ether gethered log probabilities of targets or all probablities" 
+            assert log_probabilities.shape == targets.shape, f"log_probs have to be ether gethered log probabilities of targets or all probablities, received {log_probabilities.shape} {repr(log_probabilities)}"
         self._neglogloss += - float(log_probabilities.sum())
         self._data_set_size += int(targets.shape[0])
 
