@@ -97,7 +97,7 @@ class WikiTextEvaluator(BaseEvaluator):
         else:
             assert log_probabilities.shape == targets.shape, f"log_probs have to be ether gethered log probabilities of targets or all probablities, received {log_probabilities.shape} {repr(log_probabilities)}"
         self._neglogloss += - float(log_probabilities.sum())
-        self._data_set_size += int(targets.size())
+        self._data_set_size += int(targets.size)
 
         if not self.first_batch_processed:
             content = self.cache_values(
