@@ -72,10 +72,7 @@ class MultiNLI(BaseEvaluator):
                  paper_arxiv_id: str = None,
                  paper_pwc_id: str = None,
                  paper_results: dict = None,
-                 model_description=None,
-                 text_transformation: bool = False,
-                 subword_tokenization: bool = False,
-                 dataset=None):
+                 model_description=None):
 
         super().__init__(model_name, paper_arxiv_id,
                          paper_pwc_id, paper_results, model_description)
@@ -90,7 +87,7 @@ class MultiNLI(BaseEvaluator):
         return get_path(self.local_root)
     
     @property
-    def dataset(self):
+    def data_generator(self):
         for v1, v2 in zip_longest(self.matched.dataset.items(), self.mismatched.dataset.items()):
             if v1 is not None:
                 yield v1
