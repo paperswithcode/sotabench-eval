@@ -1,8 +1,9 @@
 import numpy as np
 from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult, check_inputs
+import time
 
-from sotabencheval.utils import calculate_batch_hash, is_server
+from sotabencheval.utils import calculate_batch_hash, is_server, get_max_memory_allocated
 from sotabencheval.semantic_segmentation.utils import ConfusionMatrix
 
 
@@ -106,6 +107,9 @@ class ADE20KEvaluator(object):
         self.first_batch_processed = False
         self.batch_hash = None
         self.cached_results = False
+
+        self.init_time = time.time()
+        self.speed_mem_metrics = {}
 
     @property
     def cache_exists(self):
@@ -241,7 +245,12 @@ class ADE20KEvaluator(object):
                    "Mean IOU": iu.mean().item(),
                }
 
+        self.speed_mem_metrics['Max Memory Allocated (Total)'] = get_max_memory_allocated()
+
         return self.results
+
+    def reset_time(self):
+        self.init_time = time.time()
 
     def save(self):
         """
@@ -256,11 +265,21 @@ class ADE20KEvaluator(object):
         # recalculate to ensure no mistakes made during batch-by-batch metric calculation
         self.get_results()
 
+        if not self.cached_results:
+            self.speed_mem_metrics['Tasks / Evaluation Time'] = None
+            self.speed_mem_metrics['Tasks'] = None
+            self.speed_mem_metrics['Evaluation Time'] = (time.time() - self.init_time)
+        else:
+            self.speed_mem_metrics['Tasks / Evaluation Time'] = None
+            self.speed_mem_metrics['Tasks'] = None
+            self.speed_mem_metrics['Evaluation Time'] = None
+
         return BenchmarkResult(
             task=self.task,
             config={},
             dataset='ADE20K val',
             results=self.results,
+            speed_mem_metrics=self.speed_mem_metrics,
             model=self.model_name,
             model_description=self.model_description,
             arxiv_id=self.paper_arxiv_id,

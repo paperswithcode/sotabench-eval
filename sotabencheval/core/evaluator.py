@@ -1,3 +1,5 @@
+import time
+
 from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult
 from sotabencheval.utils import is_server
@@ -21,6 +23,10 @@ class BaseEvaluator:
         self.batch_hash = None
         self.cached_results = False
         self.results = None
+        self._cache_exists = None
+
+        self.init_time = time.time()
+        self.speed_mem_metrics = {}
 
     @property
     def cache_exists(self):
@@ -54,11 +60,14 @@ class BaseEvaluator:
         :return: bool or None (if not in check mode)
         """
 
-        if not self.first_batch_processed:
-            raise ValueError('No batches of data have been processed so no batch_hash exists')
-
         if not is_server():  # we only check the cache on the server
             return None
+
+        if not self.first_batch_processed:
+            return False
+
+        if self._cache_exists is not None:
+            return self._cache_exists
 
         client = Client.public()
         cached_res = client.get_results_by_run_hash(self.batch_hash)
@@ -69,14 +78,16 @@ class BaseEvaluator:
                 "No model change detected (using the first batch run "
                 "hash). Will use cached results."
             )
-            return True
 
-        return False
-    
+            self._cache_exists = True
+        else:
+            self._cache_exists = False
+        return self._cache_exists
+
     def reset(self):
         """Resets the internal state of evaluator and allows to start over"""
         pass
-    
+
     def cache_values(self, **kwargs):
         """Convert kwargs to something that can be used to generate batch hash"""
         return cache_value(kwargs)
@@ -84,6 +95,7 @@ class BaseEvaluator:
     def eval(self, results_generator):
         """Run full evaluation loop on results_genertor"""
         self.reset()
+        self.reset_time()
         for results in results_generator:
             self.add(*results)
             if self.first_batch_processed and self.cache_exists:
@@ -98,6 +110,9 @@ class BaseEvaluator:
     def print_results(self):
         """Print results."""
         print(self.get_results())
+
+    def reset_time(self):
+        self.init_time = time.time()
 
     def save(self, **kwargs):
         """
@@ -116,6 +131,7 @@ class BaseEvaluator:
             task=self.task,
             config={},
             results=self.results,
+            speed_mem_metrics=self.speed_mem_metrics,
             model=self.model_name,
             model_description=self.model_description,
             arxiv_id=self.paper_arxiv_id,

@@ -6,8 +6,10 @@ import os
 from pycocotools.coco import COCO
 from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult, check_inputs
+import time
 
 from sotabencheval.utils import calculate_batch_hash, extract_archive, change_root_if_server, is_server
+from sotabencheval.utils import get_max_memory_allocated
 from sotabencheval.object_detection.coco_eval import CocoEvaluator
 from sotabencheval.object_detection.utils import get_coco_metrics
 
@@ -104,6 +106,10 @@ class COCOEvaluator(object):
         self.first_batch_processed = False
         self.batch_hash = None
         self.cached_results = False
+
+        self.speed_mem_metrics = {}
+
+        self.init_time = time.time()
 
     def _download(self, annFile):
         if not os.path.isdir(annFile):
@@ -261,8 +267,12 @@ class COCOEvaluator(object):
         self.coco_evaluator.summarize()
 
         self.results = get_coco_metrics(self.coco_evaluator)
+        self.speed_mem_metrics['Max Memory Allocated (Total)'] = get_max_memory_allocated()
 
         return self.results
+
+    def reset_time(self):
+        self.init_time = time.time()
 
     def save(self):
         """
@@ -277,11 +287,23 @@ class COCOEvaluator(object):
         # recalculate to ensure no mistakes made during batch-by-batch metric calculation
         self.get_results()
 
+        if not self.cached_results:
+            unique_image_ids = set([d['image_id'] for d in self.detections])
+            exec_speed = (time.time() - self.init_time)
+            self.speed_mem_metrics['Tasks / Evaluation Time'] = len(unique_image_ids) / exec_speed
+            self.speed_mem_metrics['Tasks'] = len(unique_image_ids)
+            self.speed_mem_metrics['Evaluation Time'] = exec_speed
+        else:
+            self.speed_mem_metrics['Tasks / Evaluation Time'] = None
+            self.speed_mem_metrics['Tasks'] = None
+            self.speed_mem_metrics['Evaluation Time'] = None
+
         return BenchmarkResult(
             task=self.task,
             config={},
             dataset='COCO minival',
             results=self.results,
+            speed_mem_metrics=self.speed_mem_metrics,
             model=self.model_name,
             model_description=self.model_description,
             arxiv_id=self.paper_arxiv_id,

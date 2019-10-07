@@ -1,11 +1,11 @@
 from sotabencheval.core import BaseEvaluator
-from sotabencheval.utils import calculate_batch_hash, change_root_if_server, is_server
+from sotabencheval.utils import calculate_batch_hash, change_root_if_server, is_server, get_max_memory_allocated
 from sotabencheval.question_answering.utils import *
 from typing import Dict
 from enum import Enum
 from pathlib import Path
 import json
-
+import time
 
 class SQuADVersion(Enum):
     V11 = 'v1.1'
@@ -51,10 +51,23 @@ class SQuADEvaluator(BaseEvaluator):
         if self.cached_results:
             return self.results
         self.results = self.metrics.get_results()
+        self.speed_mem_metrics['Max Memory Allocated (Total)'] = get_max_memory_allocated()
+
         return self.results
 
     def save(self):
         dataset = "SQuAD{} dev".format(self.metrics.version.value[1:])
+
+        if not self.cached_results:
+            exec_speed = (time.time() - self.init_time)
+            self.speed_mem_metrics['Tasks / Evaluation Time'] = len(self.metrics.answers) / exec_speed
+            self.speed_mem_metrics['Tasks'] = len(self.metrics.answers)
+            self.speed_mem_metrics['Evaluation Time'] = exec_speed
+        else:
+            self.speed_mem_metrics['Tasks / Evaluation Time'] = None
+            self.speed_mem_metrics['Tasks'] = None
+            self.speed_mem_metrics['Evaluation Time'] = None
+
         return super().save(dataset=dataset)
 
 
@@ -92,6 +105,7 @@ class SQuADMetrics:
             return
         if set(self.answers.keys()) & set(answers.keys()):
             print("Multiple predictions for a single question")
+
         self.answers.update(answers)
 
     def evaluate(self, ignore_missing=False):
@@ -118,4 +132,5 @@ class SQuADMetrics:
 
     def get_results(self, ignore_missing=False):
         self.evaluate(ignore_missing)
+
         return self._results

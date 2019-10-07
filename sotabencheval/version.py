@@ -15,6 +15,6 @@ class Version:
             f"build={self.build})"
         )
 
-version = Version(0, 0, 26)
+version = Version(0, 0, 33)
 
 __version__ = str(version)
