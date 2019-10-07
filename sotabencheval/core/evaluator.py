@@ -74,21 +74,30 @@ class BaseEvaluator:
         return False
     
     def reset(self):
+        """Resets the internal state of evaluator and allows to start over"""
         pass
     
     def cache_values(self, **kwargs):
+        """Convert kwargs to something that can be used to generate batch hash"""
         return cache_value(kwargs)
 
     def eval(self, results_generator):
+        """Run full evaluation loop on results_genertor"""
         self.reset()
         for results in results_generator:
-            if isinstance(results, dict): 
-                self.add(**results)
-            else:
-                self.add(*results)
+            self.add(*results)
             if self.first_batch_processed and self.cache_exists:
                 break
-        return self.save()
+        self.save()
+        return self
+    
+    def get_results(self):
+        """Calculate results."""
+        return self.results
+
+    def print_results(self):
+        """Print results."""
+        print(self.get_results())
 
     def save(self, **kwargs):
         """
