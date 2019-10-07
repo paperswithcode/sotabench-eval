@@ -3,7 +3,7 @@ from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult, check_inputs
 import time
 
-from sotabencheval.utils import calculate_batch_hash, is_server, AverageMeter, get_max_memory_allocated
+from sotabencheval.utils import calculate_batch_hash, is_server, get_max_memory_allocated
 from sotabencheval.semantic_segmentation.utils import ConfusionMatrix
 
 
@@ -108,14 +108,8 @@ class ADE20KEvaluator(object):
         self.batch_hash = None
         self.cached_results = False
 
-        self.inference_time = AverageMeter()
-        self.start_time = time.time()
-        self.speed_mem_metrics = {
-            'Tasks Per Second (Partial)': None,
-            'Tasks Per Second (Total)': None,
-            'Memory Allocated (Partial)': None,
-            'Memory Allocated (Total)': None
-        }
+        self.init_time = time.time()
+        self.speed_mem_metrics = {}
 
     @property
     def cache_exists(self):
@@ -155,8 +149,6 @@ class ADE20KEvaluator(object):
         if not is_server():
             return None
 
-        self.speed_mem_metrics['Tasks Per Second (Partial)'] = len(self.inference_time.count) / self.inference_time.sum
-
         client = Client.public()
         cached_res = client.get_results_by_run_hash(self.batch_hash)
         if cached_res:
@@ -169,18 +161,6 @@ class ADE20KEvaluator(object):
             return True
 
         return False
-
-    def update_inference_time(self):
-
-        if not self.outputs and self.inference_time.count < 1:
-            # assuming this is the first time the evaluator is called
-            self.inference_time.update(time.time() - self.start_time)
-        elif not self.outputs and self.inference_time.count > 0:
-            # assuming the user has reset outputs, and is then readding (evaluation post batching)
-            pass
-        else:
-            # if there are outputs and the inference time count is > 0
-            self.inference_time.update(time.time() - self.start_time)
 
     def add(self, outputs: np.ndarray, targets: np.ndarray):
         """
@@ -232,7 +212,6 @@ class ADE20KEvaluator(object):
         :return: void - updates self.ade20k_evaluator with the data, and updates self.targets and self.outputs
         """
 
-        self.update_inference_time()
         self.ade20k_evaluator.update(targets, outputs)
 
         self.targets = np.append(self.targets, targets)
@@ -244,8 +223,6 @@ class ADE20KEvaluator(object):
                 np.append(np.around(targets, 3), np.around(outputs, 3)),
                 np.around(np.array([acc_global.item(), iu.mean().item()]), 3)))
             self.first_batch_processed = True
-
-        self.start_time = time.time()
 
     def get_results(self):
         """
@@ -268,10 +245,12 @@ class ADE20KEvaluator(object):
                    "Mean IOU": iu.mean().item(),
                }
 
-        self.speed_mem_metrics['Tasks Per Second (Total)'] = len(self.inference_time.count) / self.inference_time.sum
         self.speed_mem_metrics['Max Memory Allocated (Total)'] = get_max_memory_allocated()
 
         return self.results
+
+    def reset_time(self):
+        self.init_time = time.time()
 
     def save(self):
         """
@@ -285,6 +264,11 @@ class ADE20KEvaluator(object):
 
         # recalculate to ensure no mistakes made during batch-by-batch metric calculation
         self.get_results()
+
+        if not self.cached_results:
+            self.speed_mem_metrics['Evaluation Time'] = (time.time() - self.init_time)
+        else:
+            self.speed_mem_metrics['Evaluation Time'] = None
 
         return BenchmarkResult(
             task=self.task,

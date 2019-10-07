@@ -9,7 +9,7 @@ from sotabenchapi.core import BenchmarkResult, check_inputs
 import time
 
 from sotabencheval.utils import calculate_batch_hash, extract_archive, change_root_if_server, is_server
-from sotabencheval.utils import AverageMeter, get_max_memory_allocated
+from sotabencheval.utils import get_max_memory_allocated
 from sotabencheval.object_detection.coco_eval import CocoEvaluator
 from sotabencheval.object_detection.utils import get_coco_metrics
 
@@ -107,15 +107,9 @@ class COCOEvaluator(object):
         self.batch_hash = None
         self.cached_results = False
 
-        self.inference_time = AverageMeter()
-        self.start_time = time.time()
-        self.speed_mem_metrics = {
-            'Tasks Per Second (Partial)': None,
-            'Tasks Per Second (Total)': None,
-            'Memory Allocated (Partial)': None,
-            'Memory Allocated (PartTotalial)': None
-        }
+        self.speed_mem_metrics = {}
 
+        self.init_time = time.time()
 
     def _download(self, annFile):
         if not os.path.isdir(annFile):
@@ -172,9 +166,6 @@ class COCOEvaluator(object):
         if not is_server():  # we only check the cache on the server
             return None
 
-        unique_image_ids = set([d['image_id'] for d in self.detections])
-        self.speed_mem_metrics['Tasks Per Second (Partial)'] = len(unique_image_ids)/self.inference_time.sum
-
         client = Client.public()
         cached_res = client.get_results_by_run_hash(self.batch_hash)
         if cached_res:
@@ -223,18 +214,6 @@ class COCOEvaluator(object):
 
         return new_annotations + [metrics]
 
-    def update_inference_time(self):
-
-        if not self.detections and self.inference_time.count < 1:
-            # assuming this is the first time the evaluator is called
-            self.inference_time.update(time.time() - self.start_time)
-        elif not self.detections and self.inference_time.count > 0:
-            # assuming the user has reset outputs, and is then readding (evaluation post batching)
-            pass
-        else:
-            # if there are outputs and the inference time count is > 0
-            self.inference_time.update(time.time() - self.start_time)
-
     def add(self, detections: list):
         """
         Update the evaluator with new detections
@@ -258,8 +237,6 @@ class COCOEvaluator(object):
                 110.14895629882812, 278.2847595214844], 'score': 0.999152421951294, 'category_id': 1}])
         """
 
-        self.update_inference_time()
-
         self.detections.extend(detections)
 
         self.coco_evaluator.update(detections)
@@ -272,8 +249,6 @@ class COCOEvaluator(object):
                 self.batch_hash = calculate_batch_hash(
                     self.cache_values(annotations=detections, metrics=get_coco_metrics(self.coco_evaluator)))
                 self.first_batch_processed = True
-
-        self.start_time = time.time()
 
     def get_results(self):
         """
@@ -292,11 +267,12 @@ class COCOEvaluator(object):
         self.coco_evaluator.summarize()
 
         self.results = get_coco_metrics(self.coco_evaluator)
-        unique_image_ids = set([d['image_id'] for d in self.detections])
-        self.speed_mem_metrics['Tasks Per Second (Total)'] = len(unique_image_ids) / self.inference_time.sum
         self.speed_mem_metrics['Max Memory Allocated (Total)'] = get_max_memory_allocated()
 
         return self.results
+
+    def reset_time(self):
+        self.init_time = time.time()
 
     def save(self):
         """
@@ -310,6 +286,12 @@ class COCOEvaluator(object):
 
         # recalculate to ensure no mistakes made during batch-by-batch metric calculation
         self.get_results()
+
+        if not self.cached_results:
+            unique_image_ids = set([d['image_id'] for d in self.detections])
+            self.speed_mem_metrics['Evaluation Time'] = len(unique_image_ids) / (time.time() - self.init_time)
+        else:
+            self.speed_mem_metrics['Evaluation Time'] = None
 
         return BenchmarkResult(
             task=self.task,

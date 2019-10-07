@@ -8,6 +8,7 @@ from pathlib import Path
 from enum import Enum
 import time
 
+
 class WMTDataset(Enum):
     News2014 = "newstest2014"
     News2019 = "newstest2019"
@@ -52,8 +53,6 @@ class WMTEvaluator(BaseEvaluator):
 
         self.metrics = TranslationMetrics(self.source_dataset_path, self.target_dataset_path)
 
-        self.start_time = time.time()
-
     def _get_source_dataset_filename(self):
         if self.dataset == WMTDataset.News2014:
             other_lang = self.source_lang.value if self.target_lang == Language.English else self.target_lang.value
@@ -78,33 +77,17 @@ class WMTEvaluator(BaseEvaluator):
         ds_names = {WMTDataset.News2014: "WMT2014", WMTDataset.News2019: "WMT2019"}
         return "{0} {1}-{2}".format(ds_names.get(self.dataset), self.source_lang.fullname, self.target_lang.fullname)
 
-    def update_inference_time(self):
-
-        if not self.metrics._results and self.inference_time.count < 1:
-            # assuming this is the first time the evaluator is called
-            self.inference_time.update(time.time() - self.start_time)
-        elif not self.metrics._results and self.inference_time.count > 0:
-            # assuming the user has reset outputs, and is then readding (evaluation post batching)
-            pass
-        else:
-            # if there are outputs and the inference time count is > 0
-            self.inference_time.update(time.time() - self.start_time)
 
     def add(self, answers: Dict[str, str]):
-
-        self.update_inference_time()
 
         self.metrics.add(answers)
 
         if not self.first_batch_processed and self.metrics.has_data:
-            self.speed_mem_metrics['Tasks Per Second (Partial)'] = len(self.metrics.answers) / self.inference_time.sum
             self.batch_hash = calculate_batch_hash(
                 self.cache_values(answers=self.metrics.answers,
                                   metrics=self.metrics.get_results(ignore_missing=True))
             )
             self.first_batch_processed = True
-
-        self.start_time = time.time()
 
     def reset(self):
         self.metrics.reset()
@@ -113,12 +96,17 @@ class WMTEvaluator(BaseEvaluator):
         if self.cached_results:
             return self.results
         self.results = self.metrics.get_results()
-        self.speed_mem_metrics['Tasks Per Second (Total)'] = len(self.metrics.answers) / self.inference_time.sum
         self.speed_mem_metrics['Max Memory Allocated (Total)'] = get_max_memory_allocated()
 
         return self.results
 
     def save(self):
         dataset = self._get_dataset_name()
+
+        if not self.cached_results:
+            self.speed_mem_metrics['Evaluation Time'] = len(self.metrics.answers) / (time.time() - self.init_time)
+        else:
+            self.speed_mem_metrics['Evaluation Time'] = None
+
         return super().save(dataset=dataset)
 

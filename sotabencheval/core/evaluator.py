@@ -2,7 +2,7 @@ import time
 
 from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult
-from sotabencheval.utils import is_server, AverageMeter
+from sotabencheval.utils import is_server
 from sotabencheval.core.cache import cache_value
 
 
@@ -25,14 +25,8 @@ class BaseEvaluator:
         self.results = None
         self._cache_exists = None
 
-        self.inference_time = AverageMeter()
-        self.start_time = time.time()
-        self.speed_mem_metrics = {
-            'Tasks Per Second (Partial)': None,
-            'Tasks Per Second (Total)': None,
-            'Memory Allocated (Partial)': None,
-            'Memory Allocated (Total)': None
-        }
+        self.init_time = time.time()
+        self.speed_mem_metrics = {}
 
     @property
     def cache_exists(self):
@@ -91,6 +85,9 @@ class BaseEvaluator:
 
     def cache_values(self, **kwargs):
         return cache_value(kwargs)
+
+    def reset_time(self):
+        self.init_time = time.time()
 
     def save(self, **kwargs):
         """
