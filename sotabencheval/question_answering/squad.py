@@ -7,7 +7,6 @@ from pathlib import Path
 import json
 import time
 
-
 class SQuADVersion(Enum):
     V11 = 'v1.1'
     V20 = 'v2.0'
@@ -35,33 +34,15 @@ class SQuADEvaluator(BaseEvaluator):
 
         self.metrics = SQuADMetrics(self.dataset_path, version)
 
-        self.start_time = time.time()
-
-    def update_inference_time(self):
-
-        if not self.metrics._results and self.inference_time.count < 1:
-            # assuming this is the first time the evaluator is called
-            self.inference_time.update(time.time() - self.start_time)
-        elif not self.metrics._results and self.inference_time.count > 0:
-            # assuming the user has reset outputs, and is then readding (evaluation post batching)
-            pass
-        else:
-            # if there are outputs and the inference time count is > 0
-            self.inference_time.update(time.time() - self.start_time)
-
     def add(self, answers: Dict[str, str]):
-        self.update_inference_time()
         self.metrics.add(answers)
 
         if not self.first_batch_processed and self.metrics.has_data:
-            self.speed_mem_metrics['Tasks Per Second (Partial)'] = len(self.metrics.answers) / self.inference_time.sum
             self.batch_hash = calculate_batch_hash(
                 self.cache_values(answers=self.metrics.answers,
                                   metrics=self.metrics.get_results(ignore_missing=True))
             )
             self.first_batch_processed = True
-
-        self.start_time = time.time()
 
     def reset(self):
         self.metrics.reset()
@@ -70,13 +51,18 @@ class SQuADEvaluator(BaseEvaluator):
         if self.cached_results:
             return self.results
         self.results = self.metrics.get_results()
-        self.speed_mem_metrics['Tasks Per Second (Total)'] = len(self.metrics.answers) / self.inference_time.sum
         self.speed_mem_metrics['Max Memory Allocated (Total)'] = get_max_memory_allocated()
 
         return self.results
 
     def save(self):
         dataset = "SQuAD{} dev".format(self.metrics.version.value[1:])
+
+        if not self.cached_results:
+            self.speed_mem_metrics['Evaluation Time'] = len(self.metrics.answers) / (time.time() - self.init_time)
+        else:
+            self.speed_mem_metrics['Evaluation Time'] = None
+
         return super().save(dataset=dataset)
 
 

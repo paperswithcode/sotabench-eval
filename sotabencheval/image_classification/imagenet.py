@@ -157,14 +157,8 @@ class ImageNetEvaluator(object):
         self.batch_hash = None
         self.cached_results = False
 
-        self.inference_time = AverageMeter()
-        self.start_time = time.time()
-        self.speed_mem_metrics = {
-            'Tasks Per Second (Partial)': None,
-            'Tasks Per Second (Total)': None,
-            'Memory Allocated (Partial)': None,
-            'Memory Allocated (Total)': None
-        }
+        self.speed_mem_metrics = {}
+        self.init_time = time.time()
 
     @property
     def cache_exists(self):
@@ -207,8 +201,6 @@ class ImageNetEvaluator(object):
         if not is_server():  # we only check the cache on the server
             return None
 
-        self.speed_mem_metrics['Tasks Per Second (Partial)'] = len(self.outputs)/self.inference_time.sum
-
         client = Client.public()
         cached_res = client.get_results_by_run_hash(self.batch_hash)
         if cached_res:
@@ -237,18 +229,6 @@ class ImageNetEvaluator(object):
         with open(os.path.join(self.root, 'imagenet_val_targets.pkl'), 'rb') as handle:
             self.targets = pickle.load(handle)
 
-    def update_inference_time(self):
-
-        if not self.outputs and self.inference_time.count < 1:
-            # assuming this is the first time the evaluator is called
-            self.inference_time.update(time.time() - self.start_time)
-        elif not self.outputs and self.inference_time.count > 0:
-            # assuming the user has cleared outputs, and is then readding (evaluation post batching)
-            pass
-        else:
-            # if there are outputs and the inference time count is > 0
-            self.inference_time.update(time.time() - self.start_time)
-
     def add(self, output_dict: dict):
         """
         Updates the evaluator with new results
@@ -270,7 +250,6 @@ class ImageNetEvaluator(object):
             print('Empty output_dict; will not process')
             return
 
-        self.update_inference_time()
         self.outputs = dict(list(self.outputs.items()) + list(output_dict.items()))
 
         for i, dict_key in enumerate(output_dict.keys()):
@@ -287,8 +266,6 @@ class ImageNetEvaluator(object):
             hash_dict['Top 5 Accuracy'] = self.top5.av
             self.batch_hash = calculate_batch_hash(hash_dict)
             self.first_batch_processed = True
-
-        self.start_time = time.time()
 
     def get_results(self):
         """
@@ -330,10 +307,12 @@ class ImageNetEvaluator(object):
             self.top5.update(prec5, 1)
 
         self.results = {'Top 1 Accuracy': self.top1.avg, 'Top 5 Accuracy': self.top5.avg}
-        self.speed_mem_metrics['Tasks Per Second (Total)'] = len(self.outputs) / self.inference_time.sum
         self.speed_mem_metrics['Max Memory Allocated (Total)'] = get_max_memory_allocated()
 
         return self.results
+
+    def reset_time(self):
+        self.init_time = time.time()
 
     def save(self):
         """
@@ -347,6 +326,11 @@ class ImageNetEvaluator(object):
 
         # recalculate to ensure no mistakes made during batch-by-batch metric calculation
         self.get_results()
+
+        if not self.cached_results:
+            self.speed_mem_metrics['Evaluation Time'] = len(self.outputs) / (time.time() - self.init_time)
+        else:
+            self.speed_mem_metrics['Evaluation Time'] = None
 
         return BenchmarkResult(
             task=self.task,
