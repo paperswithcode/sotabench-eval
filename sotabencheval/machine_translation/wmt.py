@@ -104,8 +104,13 @@ class WMTEvaluator(BaseEvaluator):
         dataset = self._get_dataset_name()
 
         if not self.cached_results:
-            self.speed_mem_metrics['Evaluation Time'] = len(self.metrics.answers) / (time.time() - self.init_time)
+            exec_speed = (time.time() - self.init_time)
+            self.speed_mem_metrics['Tasks / Evaluation Time'] = len(self.metrics.answers) / exec_speed
+            self.speed_mem_metrics['Tasks'] = len(self.metrics.answers)
+            self.speed_mem_metrics['Evaluation Time'] = exec_speed
         else:
+            self.speed_mem_metrics['Tasks / Evaluation Time'] = None
+            self.speed_mem_metrics['Tasks'] = None
             self.speed_mem_metrics['Evaluation Time'] = None
 
         return super().save(dataset=dataset)

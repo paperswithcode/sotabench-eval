@@ -266,8 +266,12 @@ class ADE20KEvaluator(object):
         self.get_results()
 
         if not self.cached_results:
+            self.speed_mem_metrics['Tasks / Evaluation Time'] = None
+            self.speed_mem_metrics['Tasks'] = None
             self.speed_mem_metrics['Evaluation Time'] = (time.time() - self.init_time)
         else:
+            self.speed_mem_metrics['Tasks / Evaluation Time'] = None
+            self.speed_mem_metrics['Tasks'] = None
             self.speed_mem_metrics['Evaluation Time'] = None
 
         return BenchmarkResult(

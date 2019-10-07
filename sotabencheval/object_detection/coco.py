@@ -289,8 +289,13 @@ class COCOEvaluator(object):
 
         if not self.cached_results:
             unique_image_ids = set([d['image_id'] for d in self.detections])
-            self.speed_mem_metrics['Evaluation Time'] = len(unique_image_ids) / (time.time() - self.init_time)
+            exec_speed = (time.time() - self.init_time)
+            self.speed_mem_metrics['Tasks / Evaluation Time'] = len(unique_image_ids) / exec_speed
+            self.speed_mem_metrics['Tasks'] = len(unique_image_ids)
+            self.speed_mem_metrics['Evaluation Time'] = exec_speed
         else:
+            self.speed_mem_metrics['Tasks / Evaluation Time'] = None
+            self.speed_mem_metrics['Tasks'] = None
             self.speed_mem_metrics['Evaluation Time'] = None
 
         return BenchmarkResult(

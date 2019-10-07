@@ -328,8 +328,13 @@ class ImageNetEvaluator(object):
         self.get_results()
 
         if not self.cached_results:
-            self.speed_mem_metrics['Evaluation Time'] = len(self.outputs) / (time.time() - self.init_time)
+            exec_speed = (time.time() - self.init_time)
+            self.speed_mem_metrics['Tasks / Evaluation Time'] = len(self.outputs) / exec_speed
+            self.speed_mem_metrics['Tasks'] = len(self.outputs)
+            self.speed_mem_metrics['Evaluation Time'] = exec_speed
         else:
+            self.speed_mem_metrics['Tasks / Evaluation Time'] = None
+            self.speed_mem_metrics['Tasks'] = None
             self.speed_mem_metrics['Evaluation Time'] = None
 
         return BenchmarkResult(
