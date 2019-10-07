@@ -41,17 +41,14 @@ class WikiTextDataset(Enum):
 
 def gether_probs(log_probabilities, targets):
     if hasattr(log_probabilities, 'cpu') and hasattr(log_probabilities, 'numpy'):
-        probs = log_probabilities.gather(-1,
-                                            targets.unsqueeze(-1))
-        self._neglogloss += - probs.sum().cpu().item()
-        self._data_set_size += int(targets.numel())
+        probs = log_probabilities.gather(-1, targets.unsqueeze(-1))
     else: # fall back to numpy implementation that is 4 times slower than pytorch
         vocab_sz = int(log_probabilities.shape[-1])
         log_probabilities, targets =  to_numpy(log_probabilities, targets)
         log_probabilities = log_probabilities.reshape(-1, vocab_sz)
         targets = targets.reshape(-1)
         probs = log_probabilities[np.arange(log_probabilities.shape[0]), targets]
-    return probs, targets     
+    return to_numpy(probs, targets)   
 
     
 class WikiTextEvaluator(BaseEvaluator):
@@ -100,7 +97,7 @@ class WikiTextEvaluator(BaseEvaluator):
         else:
             assert log_probabilities.shape == targets.shape, f"log_probs have to be ether gethered log probabilities of targets or all probablities, received {log_probabilities.shape} {repr(log_probabilities)}"
         self._neglogloss += - float(log_probabilities.sum())
-        self._data_set_size += int(targets.shape[0])
+        self._data_set_size += int(targets.size())
 
         if not self.first_batch_processed:
             content = self.cache_values(
