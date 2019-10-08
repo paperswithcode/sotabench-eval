@@ -3,7 +3,7 @@ from sotabencheval.utils import calculate_batch_hash, change_root_if_server, is_
 from sotabencheval.machine_translation.languages import Language
 from sotabencheval.machine_translation.metrics import TranslationMetrics
 from sotabencheval.utils import get_max_memory_allocated
-from typing import Dict
+from typing import Dict, Callable
 from pathlib import Path
 from enum import Enum
 import time
@@ -33,7 +33,8 @@ class WMTEvaluator(BaseEvaluator):
                  paper_arxiv_id: str = None,
                  paper_pwc_id: str = None,
                  paper_results: dict = None,
-                 model_description=None):
+                 model_description: str = None,
+                 tokenization: Callable[[str], str] = None):
         super().__init__(model_name, paper_arxiv_id, paper_pwc_id, paper_results, model_description)
         self.root = change_root_if_server(root=local_root,
                                           server_root=".data/nlp/wmt")
@@ -51,7 +52,7 @@ class WMTEvaluator(BaseEvaluator):
         self.source_dataset_path = Path(self.root) / source_dataset_filename
         self.target_dataset_path = Path(self.root) / target_dataset_filename
 
-        self.metrics = TranslationMetrics(self.source_dataset_path, self.target_dataset_path)
+        self.metrics = TranslationMetrics(self.source_dataset_path, self.target_dataset_path, tokenization)
 
     def _get_source_dataset_filename(self):
         if self.dataset == WMTDataset.News2014:
