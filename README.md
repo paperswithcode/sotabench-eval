@@ -34,14 +34,14 @@ Integration is lightweight. For example, if you are evaluating an ImageNet model
 ```python
 from sotabencheval.image_classification import ImageNetEvaluator
 evaluator = ImageNetEvaluator(
-             model_name='ResNeXt-101-32x8d',
-             paper_arxiv_id='1611.05431')
+             model_name='FixResNeXt-101 32x48d',
+             paper_arxiv_id='1906.06423')
 ```
 
-Then for each batch of predictions your model makes on ImageNet, you pass a dictionary of keys as image IDs and values as output predictions to the `evaluator.add` method:
+Then for each batch of predictions your model makes on ImageNet, you would pass a dictionary of keys as image IDs and values as a `np.ndarray`s of logits for each class to the `evaluator.add` method:
 
 ```python
-evaluator.add(dict(zip(image_ids, batch_output)))
+evaluator.add(output_dict=dict(zip(image_ids, batch_output)))
 ```
 
 This logic just needs to be written in a `sotabench.py` file (which contains whatever evaluation logic you need - e.g loading and processing the data), and sotabench will run it on each commit and record the results:
