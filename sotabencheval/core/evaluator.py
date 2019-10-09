@@ -125,7 +125,9 @@ class BaseEvaluator:
 
                 evaluator.save()
 
-        :return: bool or None (if not in check mode)
+        This logic is for the server; it will not break the loop if you evaluate locally.
+
+        :return: bool or None (if not on server)
         """
 
         if not is_server():  # we only check the cache on the server
@@ -225,7 +227,6 @@ class BaseEvaluator:
 
         :return: BenchmarkResult object with results and metadata
         """
-
         # recalculate to ensure no mistakes made during batch-by-batch metric calculation
         self.get_results()
 

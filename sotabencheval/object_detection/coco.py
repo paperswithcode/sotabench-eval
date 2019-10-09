@@ -1,4 +1,5 @@
 # Some of the processing logic here is based on the torchvision COCO dataset
+# https://github.com/pytorch/vision/blob/master/torchvision/datasets/coco.py
 
 import copy
 import numpy as np
@@ -50,7 +51,7 @@ class COCOEvaluator(object):
                  paper_pwc_id: str = None,
                  paper_results: dict = None,
                  model_description=None,):
-        """Benchmarking function.
+        """Initializes a COCO Evaluator object
 
         Args:
             root (string): Root directory of the COCO Dataset - where the
@@ -80,9 +81,10 @@ class COCOEvaluator(object):
                 'AP75', 'APS', 'APM', 'APL'
             model_description (str, optional): Optional model description.
         """
-
         root = self.root = change_root_if_server(root=root,
                                                  server_root="./.data/vision/coco")
+
+        # Model metadata
 
         self.model_name = model_name
         self.paper_arxiv_id = paper_arxiv_id
@@ -103,15 +105,25 @@ class COCOEvaluator(object):
 
         self.detections = []
         self.results = None
+
+        # Backend variables for hashing and caching
+
         self.first_batch_processed = False
         self.batch_hash = None
         self.cached_results = False
 
-        self.speed_mem_metrics = {}
+        # Speed and memory metrics
 
+        self.speed_mem_metrics = {}
         self.init_time = time.time()
 
     def _download(self, annFile):
+        """
+        Utility function for downloading the COCO annotation file
+
+        :param annFile: path of the annotations file
+        :return: void - extracts the archive
+        """
         if not os.path.isdir(annFile):
             if "2017" in annFile:
                 annotations_dir_zip = os.path.join(
@@ -159,7 +171,6 @@ class COCOEvaluator(object):
 
         :return: bool or None (if not in check mode)
         """
-
         if not self.first_batch_processed:
             raise ValueError('No batches of data have been processed so no batch_hash exists')
 
@@ -207,7 +218,6 @@ class COCOEvaluator(object):
         :param metrics: dictionary of final AP metrics
         :return: list of data (combining annotations and metrics)
         """
-
         metrics = {k: np.round(v, 3) for k, v in metrics.items()}
         new_annotations = copy.deepcopy(annotations)
         new_annotations = [self.cache_format_ann(ann) for ann in new_annotations]
@@ -236,7 +246,6 @@ class COCOEvaluator(object):
                 my_evaluator.add([{'image_id': 397133, 'bbox': [386.1628112792969, 69.48855590820312,
                 110.14895629882812, 278.2847595214844], 'score': 0.999152421951294, 'category_id': 1}])
         """
-
         self.detections.extend(detections)
 
         self.coco_evaluator.update(detections)
@@ -256,7 +265,6 @@ class COCOEvaluator(object):
 
         :return: dict with COCO AP metrics
         """
-
         if self.cached_results:
             return self.results
 
@@ -272,6 +280,12 @@ class COCOEvaluator(object):
         return self.results
 
     def reset_time(self):
+        """
+        Simple method to reset the timer self.init_time. Often used before a loop, to time the evaluation
+        appropriately, for example:
+
+        :return: void - resets self.init_time
+        """
         self.init_time = time.time()
 
     def save(self):
@@ -283,9 +297,10 @@ class COCOEvaluator(object):
 
         :return: BenchmarkResult object with results and metadata
         """
-
         # recalculate to ensure no mistakes made during batch-by-batch metric calculation
         self.get_results()
+
+        # If this is the first time the model is run, then we record evaluation time information
 
         if not self.cached_results:
             unique_image_ids = set([d['image_id'] for d in self.detections])

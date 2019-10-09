@@ -118,18 +118,12 @@ python sotabench.py
 
 You can also run the logic in a Jupyter Notebook if that is your preferred workflow.
 
-To verify your benchmark will run and all parameters are correct you can use the included CLI checking tool:
-
-```
-$ sb check
-```
-
 **Step Three : Login and connect your repository to [sotabench](http://www.sotabench.com)**
 
 Create an account on [sotabench](http://www.sotabench.com), then head to your user page. Click the
 **Connect a GitHub repository** button:
 
-![SotaBench](img/connect.png)
+<img width=400 src="img/connect.png">
 
 Then follow the steps to connect the repositories that you wish to benchmark:
 
