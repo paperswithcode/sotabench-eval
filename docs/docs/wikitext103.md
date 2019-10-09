@@ -12,7 +12,7 @@ You'll need the following in the root of your repository:
 - `requirements.txt` file - Python dependencies to be installed before running `sotabench.py`
 - `sotabench_setup.sh` *(optional)* - any advanced dependencies or setup, e.g. compilation
 
-You can write whatever you want in your `sotabench.py` file to get langauge model predictions on the WikiText-103 dataset.
+You can write whatever you want in your `sotabench.py` file to get language model predictions on the WikiText-103 dataset.
 
 But you will need to record your results for the server, and you'll want to avoid doing things like
 downloading the dataset on the server. So you should:
@@ -52,7 +52,7 @@ with evaluator.test_set_path.open() as f:
 
 Second option `WikiText103Evaluator.get_test_set_path(local_root)` is there if you need path to the files before you get your first instance of WikiText evaluator, for example if you are going to reuse the data for multiple models.
 ```python
-from sotabencheval.langauge_modelling import WikiText103Evaluator
+from sotabencheval.language_modelling import WikiText103Evaluator
 
 test_file_path = WikiText103Evaluator.get_test_set_path('/home/ubuntu/my_data/wiki103') 
 with test_file_path.open() as f:
@@ -64,7 +64,7 @@ with test_file_path.open() as f:
 Add this to your code - before you start batching over the dataset and making predictions:
 
 ``` python
-from sotabencheval.langauge_modelling import WikiText103Evaluator
+from sotabencheval.language_modelling import WikiText103Evaluator
 
 evaluator = WikiText103Evaluator(model_name='Model name as found in paperswithcode website')
 ```
@@ -77,7 +77,7 @@ If the `arxiv` is not available you can use `paperswithcode.com` id.
 Below is an example of an evaluator that matches `Transformer XL`:
 
 ``` python
-from sotabencheval.langauge_modelling import WikiText103Evaluator
+from sotabencheval.language_modelling import WikiText103Evaluator
 
 evaluator = WikiText103Evaluator(
     model_name="Transformer-XL Large",
