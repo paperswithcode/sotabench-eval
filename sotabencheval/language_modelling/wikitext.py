@@ -10,7 +10,7 @@ from sotabenchapi.check import in_check_mode
 from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult, check_inputs
 from sotabencheval.core import BaseEvaluator
-from sotabencheval.utils import calculate_batch_hash, extract_archive, change_root_if_server, is_server
+from sotabencheval.utils import calculate_batch_hash, extract_archive, change_root_if_server, is_server, get_max_memory_allocated
 
 class WikiTextDataset(Enum):
     WikiText103 = ('WikiText-103', 245569, 267735)
@@ -123,8 +123,10 @@ class WikiTextEvaluator(BaseEvaluator):
 
         if not self.first_batch_processed:
             content = self.cache_values(
-                probs=_to_numpy(log_probs)[0].reshape(-1))
+                probs=_to_numpy(log_probs)[0].reshape(-1),
+                api_version=3)
             self.batch_hash = calculate_batch_hash(content)
+            print(content, self.batch_hash)
             self.first_batch_processed = True
         return self.results
     
@@ -146,7 +148,7 @@ class WikiTextEvaluator(BaseEvaluator):
         }
         self.speed_mem_metrics['Max Memory Allocated (Total)'] = get_max_memory_allocated()
         exec_speed = (time.time() - self.init_time)
-        count = dataset.testset_size
+        count = self.dataset.testset_size
         self.speed_mem_metrics['Tasks / Evaluation Time'] = count / exec_speed
         self.speed_mem_metrics['Tasks'] = count
         self.speed_mem_metrics['Evaluation Time'] = exec_speed
