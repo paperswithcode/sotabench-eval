@@ -1,4 +1,5 @@
 import os
+import time
 from itertools import islice
 from enum import Enum
 from pathlib import Path
@@ -10,15 +11,6 @@ from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult, check_inputs
 from sotabencheval.core import BaseEvaluator
 from sotabencheval.utils import calculate_batch_hash, extract_archive, change_root_if_server, is_server
-
-def to_numpy(*args):
-    def convert(a):
-        if hasattr(a, 'cpu') and hasattr(a, 'numpy'):
-            return a.cpu().numpy()
-        if isinstance(a, list):
-            return np.array(a)
-        return a 
-    return [convert(a) for a in args]
 
 class WikiTextDataset(Enum):
     WikiText103 = ('WikiText-103', 245569, 267735)
@@ -38,22 +30,38 @@ class WikiTextDataset(Enum):
             extract_archive(str(root / zip_name), to_path=root.parent)
         return dataset_path
 
+def _to_numpy(*args):
+    def convert(a):
+        if hasattr(a, 'cpu') and hasattr(a, 'numpy'):
+            return a.cpu().numpy()
+        if isinstance(a, list):
+            return np.array(a)
+        return a
+    return [convert(a) for a in args]
 
-def gether_probs(log_probabilities, targets):
-    if hasattr(log_probabilities, 'cpu') and hasattr(log_probabilities, 'numpy'):
-        probs = log_probabilities.gather(-1, targets.unsqueeze(-1))
-    else: # fall back to numpy implementation that is 4 times slower than pytorch
-        vocab_sz = int(log_probabilities.shape[-1])
-        log_probabilities, targets =  to_numpy(log_probabilities, targets)
-        log_probabilities = log_probabilities.reshape(-1, vocab_sz)
+def _gather_probs(log_probs, targets):
+    """
+    Gather probabilities of each target token, from the model activations after log_softmax
+        log_probs - `torch.tensor`/`np.ndarray` shape [bs x seq_len x vocab_sz] 
+                     with model activations after `log_softmax`, with log probability of each word in the vocab
+        targets - `torch.tensor`/`np.ndarray` shape [bs x seq_len] with ground truth words
+    """
+    if hasattr(log_probs, 'gather'):
+        # if we work with torch this method is faster than numpy implementation
+        probs = log_probs.gather(-1, targets.unsqueeze(-1))
+    elif isinstance(log_probs, np.ndarray):
+        # use slower numpy implementation if we have ndarrays
+        vocab_sz = int(log_probs.shape[-1])
+        log_probs, targets =  _to_numpy(log_probs, targets)
+        log_probs = log_probs.reshape(-1, vocab_sz)
         targets = targets.reshape(-1)
-        probs = log_probabilities[np.arange(log_probabilities.shape[0]), targets]
-    return to_numpy(probs, targets)   
+        probs = log_probs[np.arange(log_probs.shape[0]), targets]
+    return _to_numpy(probs, targets)   
 
     
 class WikiTextEvaluator(BaseEvaluator):
     task = "Language Modelling"
-    dataset = None # defined in subclass
+    dataset = None # defined in a subclass
 
     def __init__(self,
                  local_root: str = '.',
@@ -77,39 +85,42 @@ class WikiTextEvaluator(BaseEvaluator):
     
     @property
     def dataset_path(self):
-        self.dataset.get_path(self.local_root)
+        return self.dataset.get_path(self.local_root)
         
     def reset(self):
         self._neglogloss = 0
         self._data_set_size = 0 
     
-    def add(self, log_probabilities, targets):
+    def add(self, log_probs, targets):
         """
-            log_probabilietes - 
+            log_probs - 
                 float - summed log probability of targets
-                [bs x bptt] array of floats - log probability of each target log_proabilites.shape == targets.shape
-                [bs x bptt x vocab_size]  - og probability of each word, we will gather correct probablites based on target
+                [bs x seq_len] array of floats - log probability of each target log_probs.shape == targets.shape
+                [bs x seq_len x vocab_size]  - og probability of each word, we will gather correct probabilites based on target
         """
-        if isinstance(log_probabilities, float):
-            log_probabilities = np.array([log_probabilities]) #  for sum to work
-        elif log_probabilities.shape[:-1] == targets.shape:
-            log_probabilities, targets = gether_probs(log_probabilities, targets)
+        if isinstance(log_probs, float):
+            log_probs = np.array([log_probs]) #  for sum to work
+        elif log_probs.shape[:-1] == targets.shape:
+            log_probs, targets = _gather_probs(log_probs, targets)
         else:
-            assert log_probabilities.shape == targets.shape, f"log_probs have to be ether gethered log probabilities of targets or all probablities, received {log_probabilities.shape} {repr(log_probabilities)}"
-        self._neglogloss += - float(log_probabilities.sum())
+            assert log_probs.shape == targets.shape, f"log_probs have to be ether gathered log probabilities of targets or all probabilites, received {log_probs.shape} {repr(log_probs)}"
+        self._neglogloss += - float(log_probs.sum())
         self._data_set_size += int(np.prod(list(targets.shape)))
 
         if not self.first_batch_processed:
             content = self.cache_values(
-                probs=to_numpy(log_probabilities)[0].reshape(-1))
+                probs=_to_numpy(log_probs)[0].reshape(-1))
             self.batch_hash = calculate_batch_hash(content)
             self.first_batch_processed = True
         return self.results
     
-    def print_stats(self):
+    def print_results(self):
+        super().print_results()
         print("Perplexity:", np.exp(self._neglogloss / self.dataset.testset_size), 
               "NeglogLoss:", self._neglogloss, "Tokens Count:", self._data_set_size)
-
+    
+    print_stats = print_results
+    
     def get_results(self):
         if self.cached_results:
             return self.results
@@ -119,6 +130,12 @@ class WikiTextEvaluator(BaseEvaluator):
         self.results = {
             'Test perplexity': perplexity
         }
+        self.speed_mem_metrics['Max Memory Allocated (Total)'] = get_max_memory_allocated()
+        exec_speed = (time.time() - self.init_time)
+        count = dataset.testset_size
+        self.speed_mem_metrics['Tasks / Evaluation Time'] = count / exec_speed
+        self.speed_mem_metrics['Tasks'] = count
+        self.speed_mem_metrics['Evaluation Time'] = exec_speed
         return self.results
 
     def save(self):

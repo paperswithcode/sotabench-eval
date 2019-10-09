@@ -1,5 +1,6 @@
 import os
 import csv
+import time
 
 from itertools import islice, zip_longest
 from enum import Enum
@@ -11,7 +12,7 @@ from sotabenchapi.check import in_check_mode
 from sotabenchapi.client import Client
 from sotabenchapi.core import BenchmarkResult, check_inputs
 from sotabencheval.core import BaseEvaluator
-from sotabencheval.utils import calculate_batch_hash, extract_archive, change_root_if_server, is_server
+from sotabencheval.utils import calculate_batch_hash, extract_archive, change_root_if_server, is_server, get_max_memory_allocated
 
 def read_csv(path):
     with path.open('r') as f:
@@ -98,6 +99,7 @@ class MultiNLI(BaseEvaluator):
         self.matched.reset()
         self.mismatched.reset()
         self.batch_hash = None
+        self.reset_time()
 
     def add(self, pairIds, predictions):
         """
@@ -116,11 +118,21 @@ class MultiNLI(BaseEvaluator):
 
 
     def get_results(self):
+        if self.cached_results:
+            return self.results
         self.results = {
             'Matched': self.matched.accuracy,
             'Mismatched': self.mismatched.accuracy
         }
+        self.speed_mem_metrics['Max Memory Allocated (Total)'] = get_max_memory_allocated()
+        exec_speed = (time.time() - self.init_time)
+        count = self.mismatched.count + self.matched.count
+        self.speed_mem_metrics['Tasks / Evaluation Time'] = count / exec_speed
+        self.speed_mem_metrics['Tasks'] = count
+        self.speed_mem_metrics['Evaluation Time'] = exec_speed
         return self.results
 
     def save(self):
+
+        
         return super().save(dataset=self.dataset)

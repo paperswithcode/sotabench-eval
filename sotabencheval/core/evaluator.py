@@ -109,7 +109,8 @@ class BaseEvaluator:
 
     def print_results(self):
         """Print results."""
-        print(self.get_results())
+        self.get_results()
+        print(f"results = {self.results}, speed_mem_metrics = {self.speed_mem_metrics}")
 
     def reset_time(self):
         self.init_time = time.time()
