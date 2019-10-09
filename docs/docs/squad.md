@@ -156,5 +156,5 @@ multiple models, as it speeds up evaluation significantly.
 
 ## Need More Help?
 
-Head on over to the [Natural Language Processing](https://forum.sotabench.com/c/nlp) section of the sotabench
+Head on over to the [Natural Language Processing](https://forum.sotabench.com/c/natural-language-processing) section of the sotabench
 forums if you have any questions or difficulties.
