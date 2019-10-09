@@ -76,7 +76,7 @@ class BaseEvaluator:
             self.cached_results = True
             print(
                 "No model change detected (using the first batch run "
-                "hash). Will use cached results."
+                f"hash {self.batch_hash}). Will use cached results."
             )
 
             self._cache_exists = True
