@@ -3,35 +3,8 @@
 ![Banner](img/banner.png)
 [//]: # (TODO Change Me) 
 
-You can download WikiText-103 dataset [here](https://blog.einstein.ai/the-wikitext-long-term-dependency-language-modeling-dataset/), there is no official leaderboard.
+You can view the WikiText-103 leaderboard [here](https://sotabench.com/benchmarks/language-modelling-on-wikitext-103).
 
-## TLDR;
-
-Here is a minimal working example that let you evaluate `transformer-xl` from `huggingface/transformers`.
-
-```python
-import torch
-from sotabencheval.langauge_modelling import WikiText103Evaluator
-
-model = torch.hub.load('huggingface/transformers', 'modelWithLMHead', 'transfo-xl-wt103').to("cuda")
-tokenizer = torch.hub.load('huggingface/transformers', 'tokenizer', 'transfo-xl-wt103').to("cuda")
-
-with WikiText103Evaluator.dataset.get_path('local/dir/wikitext-103').open() as f:
-    test_data = torch.tensor(tokenizer.encode(f.read())).to("cuda").eval()
-
-def log_probs_generator(model, test_data, seq_len=128):
-    with torch.no_grad():
-        X, Y, mems = test_data[None, :-1], test_data[None, 1:], None
-        for s in range(0, X.shape[-1], seq_len):
-            log_probs, mems, *_ = model(input_ids=X[s:s+seq_len], mems=mems)
-            yield log_probs, y[s:s+seq_len]
-
-WikiText103Evaluator(
-    model_name="Transformer-XL Large", 
-    paper_arxiv_id="1901.02860",
-    paper_pwc_id="transformer-xl-attentive-language-models" 
-).eval(log_probs_generator(model, test_data)).print_results()
-```
 ## Getting Started
 
 You'll need the following in the root of your repository:
@@ -54,32 +27,37 @@ We explain how to do these various steps below.
 ## Server Data Location
 
 The WikiText-103 development data is located in the root of your repository on the server at `.data/nlp/wikitext-103/wikitext-103-v1.zip`.
-The zip file has default format of WikiText-103 and contains a folder `wikitext-103` with the following files:
+The archive contains a folder `wikitext-103` with the following files:
 
 - `wiki.train.tokens`
 - `wiki.valid.tokens`
 - `wiki.test.tokens`
 
-Your local files may have a different file directory structure, so you
-can use control flow like below to change the data path if the script is being
-run on sotabench servers:
+It is the original zip file released [here](https://blog.einstein.ai/the-wikitext-long-term-dependency-language-modeling-dataset/).
+We are running the benchmark on the `wiki.test.tokens` dataset.
+We have two helper methods that will unpack the dataset for you and give you the `pathlib.Path`  to the test file.
 
-``` python
-from sotabencheval.utils import is_server
+First one `test_set_path` is available once you instantiate the WikiText103Evaluator
 
-if is_server():
-    DATA_ROOT = '.data/nlp/squad'
-else: # local settings
-    DATA_ROOT = '/home/ubuntu/my_data/'
+```python
+evaluator = WikiText103Evaluator(
+    model_name="Transformer-XL Large", 
+    paper_arxiv_id="1901.02860",
+    paper_pwc_id="transformer-xl-attentive-language-models",
+    local_root='/content/wikitext-103'
+)
+# dataset_path is pathlib.Path and points to wikitext.test.tokens
+with evaluator.test_set_path.open() as f:
+    test_data = torch.tensor(tokenizer.encode(f.read())).to("cuda")
 ```
-This will detect if `sotabench.py` is being run on the server and change behaviour accordingly.
 
-Alternatively you can use our helper function that will automatically unpack the zip for you and point you to the right location as follows:
-
+Second option `WikiText103Evaluator.get_test_set_path(local_root)` is there if you need path to the files before you get your first instance of WikiText evaluator, for example if you are going to reuse the data for multiple models.
 ```python
 from sotabencheval.langauge_modelling import WikiText103Evaluator
 
-test_file_path = WikiText103Evaluator.dataset.get_path('/home/ubuntu/data')
+test_file_path = WikiText103Evaluator.get_test_set_path('/home/ubuntu/my_data/wiki103') 
+with test_file_path.open() as f:
+    content = f.read()
 ```
 
 ## How Do I Initialize an Evaluator?
@@ -95,7 +73,9 @@ evaluator = WikiText103Evaluator(model_name='Model name as found in paperswithco
 If you are reproducing a model from a paper, then you can enter the arXiv ID. If you
 put in the same model name string as on the
 [Wikitext-103](https://sotabench.com/benchmarks/language-modelling-on-wikitext-103) leaderboard
-then you will enable direct comparison with the paper's model. If the `arxiv` is not avaliable you can use `paperswithcode.com` id.  Below is an example of an evaluator that matches `Transformer XL`:
+then you will enable direct comparison with the paper's model. 
+If the `arxiv` is not available you can use `paperswithcode.com` id.  
+Below is an example of an evaluator that matches `Transformer XL`:
 
 ``` python
 from sotabencheval.langauge_modelling import WikiText103Evaluator
@@ -103,7 +83,8 @@ from sotabencheval.langauge_modelling import WikiText103Evaluator
 evaluator = WikiText103Evaluator(
     model_name="Transformer-XL Large",
     paper_arxiv_id="1901.02860",
-    paper_pwc_id="transformer-xl-attentive-language-models"
+    paper_pwc_id="transformer-xl-attentive-language-models",
+    local_root="path_to_your_data",
 )
 ```
 
@@ -111,22 +92,25 @@ The above will directly compare with the result of the paper when run on the ser
 
 ## How Do I Evaluate Predictions?
 
-The evaluator object has an `.add(log_probabilites, labels)` method to submit predictions by batch or in full. The method except two `np.arrays` or `torch.tensors` of the same shape `[batch_size, sequence_length]`, first one holding `log` probabilities of each token and second holding token ids. 
+The evaluator object has an `.add(log_probs:tensor, targets:tensor)` method to submit predictions by batch or in full. 
+We expect you to give us the log probability of a batch of target tokens and the `target` tokens themselves.
+The `log_probs` can be either:
+- a 0d tensor - summed log probability of all `targets` tokens, or 
+- a 2d tensor - log probabilities of each target token, the `log_probs.shape` have to match `targets.shape`
+- a 3d tensor - distribution of log probabilities for each position in the sequence, we will gather the probabilities of target tokens for you.
+It is recommended to use third or second option as it give use a way to check your perplexity calculations.
 
-If your model use subword tokenization you are free to use them without the need to convert them to full words, but make sure to mark that in your evaluator with `subword_tokenization=True`, as we are including some checks to make the perplexity calculation less error prone.
+If your model use subword tokenization you don't need convert subwords to full words. 
+You are free to report probability of each subwords, we will adjust the perplexity normalization for you, but make sure to set `subword_tokenization=True` in your evaluator. 
 
-[//]: # (TODO Describe how to ensure that the right tokenization is being used) 
-
-In order to save compute we use caching mechanism so it is recommended to output prediction in larger batches, (we cache results based on the first batch).
-
-That would look something like this (for a PyTorch example):
+Here is an example how to report results (for a PyTorch example):
 
 ``` python
 
 evaluator = WikiText103Evaluator(
     model_name='GPT-2 Small',
     paper_pwc_id="language-models-are-unsupervised-multitask",
-    text_transformation=True,
+    local_root="path_to_your_data",
     subword_tokenization = True
 )
 
@@ -136,7 +120,7 @@ with torch.no_grad():
     for input, target in data_loader:
         output = model(input)
         log_probs = torch.LogSoftmax(output, dim=-1)
-        target_log_probs = output.gether(-1, targets.unsqueeze(-1))
+        target_log_probs = output.gather(-1, targets.unsqueeze(-1))
         evaluator.add(target_log_probs, target)
 ```
 
@@ -187,18 +171,47 @@ we simply return hashed results rather than running the whole evaluation again.
 Caching is very useful if you have large models, or a repository that is evaluating
 multiple models, as it speeds up evaluation significantly.
 
-Evaluator have a convenience method `eval` that encapsulates the above logic,  all you have to do is provide it with a generator that is able to output one batch at a time. The above code would look as follows:
-```python
-    def get_predictions(data_loader):
-        with torch.no_grad():
-        for input, target in data_loader:
-            # ...
-            output = model(input)
-            log_probs = #...
-            yield log_probs, target # instead of evaluator.add(...)
 
-    evaluator.eval(get_predictions(data_loader))
+## A full sotabench.py example
+
+Below we show an implementation for a model from the `huggingface/transformers`. This
+incorporates all the features explained above: (a) using the server data, 
+(b) using the WikiText103 Evaluator, and (c) caching the evaluation logic:
+
+``` python
+import torch
+from tqdm import tqdm
+from sotabencheval.language_modelling import WikiText103Evaluator
+
+model = torch.hub.load('huggingface/transformers', 'modelWithLMHead', 'transfo-xl-wt103').to("cuda")
+tokenizer = torch.hub.load('huggingface/transformers', 'tokenizer', 'transfo-xl-wt103')
+
+evaluator = WikiText103Evaluator(
+    model_name="Transformer-XL Large", 
+    paper_arxiv_id="1901.02860",
+    paper_pwc_id="transformer-xl-attentive-language-models",
+    local_root='/content/wikitext-103'
+)
+
+with evaluator.test_set_path.open() as f:
+    test_data = torch.tensor(tokenizer.encode(f.read()))
+
+seq_len = 128
+with torch.no_grad():
+    evaluator.reset_timer()
+    model.eval()
+    X, Y, mems = test_data[None, :-1], test_data[None, 1:], None
+    for s in tqdm(range(0, X.shape[-1], seq_len)):
+        x,y = X[..., s:s+seq_len].to("cuda"), Y[..., s:s+seq_len].to("cuda")
+        log_probs, mems, *_ = model(input_ids=x, mems=mems)
+        evaluator.add(log_probs, y)
+        if evaluator.cache_exists:
+            break
+evaluator.save()
+evaluator.print_results()
 ```
+
+You can run this example on google [colab](https://colab.research.google.com/drive/1Qcp1_Fgo_aMtSgf_PV1gFw1DT6hEv7fW).
 
 ## Need More Help?
 
