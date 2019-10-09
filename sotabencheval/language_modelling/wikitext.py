@@ -109,7 +109,8 @@ class WikiTextEvaluator(BaseEvaluator):
 
         if not self.first_batch_processed:
             content = self.cache_values(
-                probs=_to_numpy(log_probs)[0].reshape(-1))
+                probs=_to_numpy(log_probs)[0].reshape(-1),
+                api_version=2)
             self.batch_hash = calculate_batch_hash(content)
             self.first_batch_processed = True
         return self.results
