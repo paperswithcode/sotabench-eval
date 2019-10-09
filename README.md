@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 
-[![PyPI version](https://badge.fury.io/py/sotabencheval.svg)](https://badge.fury.io/py/sotabencheval) [![Generic badge](https://img.shields.io/badge/Documentation-Here-<COLOR>.svg)](https://shields.io/)
+[![PyPI version](https://badge.fury.io/py/sotabencheval.svg)](https://badge.fury.io/py/sotabencheval) [![Generic badge](https://img.shields.io/badge/Documentation-Here-<COLOR>.svg)](https://paperswithcode.github.io/sotabench-eval/)
 
 `sotabencheval` is a framework-agnostic library that contains a collection of deep learning benchmarks you can use to benchmark your models. It can be used in conjunction with the [sotabench](https://www.sotabench.com) service to record results for models, so the community can compare model performance on different tasks, as well as a continuous integration style service for your repository to benchmark your models on each commit.
 
