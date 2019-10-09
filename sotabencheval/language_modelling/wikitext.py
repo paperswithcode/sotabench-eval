@@ -29,6 +29,12 @@ class WikiTextDataset(Enum):
         if not dataset_path.exists(): # unzip
             extract_archive(str(root / zip_name), to_path=root.parent)
         return dataset_path
+    
+    def get_test_set_path(self, local_root):
+        return get_path(local_root).parent / "wiki.test.tokens"
+
+    def get_validation_set_path(self, local_root):
+        return get_path(local_root).parent / "wiki.valid.tokens"
 
 def _to_numpy(*args):
     def convert(a):
@@ -84,8 +90,16 @@ class WikiTextEvaluator(BaseEvaluator):
         self.reset()
     
     @property
-    def dataset_path(self):
+    def dataset_path(self): # deprecated 
         return self.dataset.get_path(self.local_root)
+
+    @property
+    def test_set_path(self):
+        return self.get_test_set_path(self.local_root)
+
+    @classmethod
+    def get_test_set_path(cls, local_root):
+        return cls.dataset.get_test_set_path(local_root)
         
     def reset(self):
         self._neglogloss = 0
