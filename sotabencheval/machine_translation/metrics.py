@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from bs4 import BeautifulSoup
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Callable
 from collections import OrderedDict
 from sacrebleu import corpus_bleu
 
@@ -10,12 +10,16 @@ MIN_CACHE_BATCH_SIZE = 32
 
 
 class TranslationMetrics:
-    def __init__(self, source_dataset_path: Path, target_dataset_path):
+    def __init__(self,
+                 source_dataset_path: Path,
+                 target_dataset_path: Path,
+                 tokenization: Callable[[str], str] = None):
         self._src_dataset_path = source_dataset_path
         self._dst_dataset_path = target_dataset_path
         self.answers = {}
         self.source_documents, self.source_segments = self._load_dataset(self._src_dataset_path)
         self._target_documents, self._target_segments = self._load_dataset(self._dst_dataset_path)
+        self._tokenization = tokenization
         self._results = None
 
     def _load_dataset(self, dataset_path):
@@ -41,12 +45,16 @@ class TranslationMetrics:
             target_segments = {sid: text for sid, text in self._target_segments.items() if sid in keep}
         else:
             target_segments = self._target_segments
-        references = [[target for target in target_segments.values()]]
         answers = [self.answers.get(sid, "") for sid in target_segments]
-        bleu = corpus_bleu(answers, references)
-        self._results = {
-            'BLEU score': bleu.score
-        }
+        references = [target for target in target_segments.values()]
+        bleu = corpus_bleu(answers, [references])
+        self._results = {'SacreBLEU': bleu.score}
+
+        if self._tokenization is not None:
+            tok_answers = [self._tokenization(answer) for answer in answers]
+            tok_references = [self._tokenization(target) for target in references]
+            tok_bleu = corpus_bleu(tok_answers, [tok_references], tokenize='none', force=True)
+            self._results['BLEU score'] = tok_bleu.score
 
     @property
     def has_data(self):

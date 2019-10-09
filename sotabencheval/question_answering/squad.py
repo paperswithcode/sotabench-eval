@@ -46,6 +46,7 @@ class SQuADEvaluator(BaseEvaluator):
 
     def reset(self):
         self.metrics.reset()
+        self.reset_time()
 
     def get_results(self):
         if self.cached_results:
