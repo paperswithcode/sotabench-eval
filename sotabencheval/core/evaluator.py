@@ -146,12 +146,17 @@ class BaseEvaluator:
             self.cached_results = True
             print(
                 "No model change detected (using the first batch run "
-                "hash). Will use cached results."
+                f"hash {self.batch_hash}). Will use cached results."
             )
+
             self._cache_exists = True
         else:
             self._cache_exists = False
         return self._cache_exists
+
+    def reset(self):
+        """Resets the internal state of evaluator and allows to start over"""
+        pass
 
     def cache_values(self, **kwargs):
         """
@@ -161,6 +166,26 @@ class BaseEvaluator:
         :return: cachable version of the keyword arguments
         """
         return cache_value(kwargs)
+
+    def eval(self, results_generator):
+        """Run full evaluation loop on results_genertor"""
+        self.reset()
+        self.reset_time()
+        for results in results_generator:
+            self.add(*results)
+            if self.first_batch_processed and self.cache_exists:
+                break
+        self.save()
+        return self
+    
+    def get_results(self):
+        """Calculate results."""
+        return self.results
+
+    def print_results(self):
+        """Print results."""
+        self.get_results()
+        print(f"results = {self.results}, speed_mem_metrics = {self.speed_mem_metrics}")
 
     def reset_time(self):
         """
