@@ -46,7 +46,7 @@ evaluator.add(output_dict=dict(zip(image_ids, batch_output)))
 
 The evaluation logic just needs to be written in a `sotabench.py` file and sotabench will run it on each commit and record the results:
 
-<img width=500 src="/docs/docs/img/results.png">
+<a href="https://sotabench.com/user/htvr/repos/TouvronHugo/FixRes#latest-results"><img width=500 src="/docs/docs/img/results.png"></a>
 
 ## Contributing
 
