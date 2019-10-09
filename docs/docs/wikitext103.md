@@ -1,7 +1,6 @@
 # WikiText-103
 
-![Banner](img/banner.png)
-[//]: # (TODO Change Me) 
+![An example text of Wikitext-103](img/language_model.png)
 
 You can view the WikiText-103 leaderboard [here](https://sotabench.com/benchmarks/language-modelling-on-wikitext-103).
 
