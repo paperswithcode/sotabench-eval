@@ -272,15 +272,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#server-data-location" title="Server Data Location" class="md-nav__link">
-    Server Data Location
+  <a href="#how-do-i-initialize-an-evaluator" title="How Do I Initialize an Evaluator?" class="md-nav__link">
+    How Do I Initialize an Evaluator?
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-do-i-initialize-an-evaluator" title="How Do I Initialize an Evaluator?" class="md-nav__link">
-    How Do I Initialize an Evaluator?
+  <a href="#server-data-location" title="Server Data Location" class="md-nav__link">
+    Server Data Location
   </a>
   
 </li>
@@ -295,6 +295,13 @@
         <li class="md-nav__item">
   <a href="#how-do-i-cache-evaluation" title="How Do I Cache Evaluation?" class="md-nav__link">
     How Do I Cache Evaluation?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-full-sotabenchpy-example" title="A Full sotabench.py Example" class="md-nav__link">
+    A Full sotabench.py Example
   </a>
   
 </li>
@@ -357,15 +364,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#server-data-location" title="Server Data Location" class="md-nav__link">
-    Server Data Location
+  <a href="#how-do-i-initialize-an-evaluator" title="How Do I Initialize an Evaluator?" class="md-nav__link">
+    How Do I Initialize an Evaluator?
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-do-i-initialize-an-evaluator" title="How Do I Initialize an Evaluator?" class="md-nav__link">
-    How Do I Initialize an Evaluator?
+  <a href="#server-data-location" title="Server Data Location" class="md-nav__link">
+    Server Data Location
   </a>
   
 </li>
@@ -380,6 +387,13 @@
         <li class="md-nav__item">
   <a href="#how-do-i-cache-evaluation" title="How Do I Cache Evaluation?" class="md-nav__link">
     How Do I Cache Evaluation?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-full-sotabenchpy-example" title="A Full sotabench.py Example" class="md-nav__link">
+    A Full sotabench.py Example
   </a>
   
 </li>
@@ -423,31 +437,11 @@
 <p>But you will need to record your results for the server, and you'll want to avoid doing things like
 downloading the dataset on the server. So you should:</p>
 <ul>
-<li><strong>Point to the server SQuAD data path</strong> - popular datasets are pre-downloaded on the server.</li>
 <li><strong>Include an Evaluation object</strong> in <code>sotabench.py</code> file to record the results.</li>
+<li><strong>Point to the server SQuAD data path</strong> - popular datasets are pre-downloaded on the server.</li>
 <li><strong>Use Caching</strong> <em>(optional)</em> - to speed up evaluation by hashing the first batch of predictions.</li>
 </ul>
 <p>We explain how to do these various steps below.</p>
-<h2 id="server-data-location">Server Data Location</h2>
-<p>The SQuAD development data is located in the root of your repository on the server at <code>.data/nlp/squad</code>.
-In this folder is contained:</p>
-<ul>
-<li><code>dev-v1.1.json</code> - containing SQuAD v1.1 development dataset</li>
-<li><code>dev-v2.0.json</code> - containing SQuAD v2.0 development dataset</li>
-</ul>
-<p>Your local files may have a different file directory structure, so you
-can use control flow like below to change the data path if the script is being
-run on sotabench servers:</p>
-<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">sotabencheval.utils</span> <span class="kn">import</span> <span class="n">is_server</span>
-
-<span class="k">if</span> <span class="n">is_server</span><span class="p">():</span>
-    <span class="n">DATA_ROOT</span> <span class="o">=</span> <span class="s1">&#39;.data/nlp/squad&#39;</span>
-<span class="k">else</span><span class="p">:</span> <span class="c1"># local settings</span>
-    <span class="n">DATA_ROOT</span> <span class="o">=</span> <span class="s1">&#39;/home/ubuntu/my_data/&#39;</span>
-</pre></div>
-
-
-<p>This will detect if <code>sotabench.py</code> is being run on the server and change behaviour accordingly.</p>
 <h2 id="how-do-i-initialize-an-evaluator">How Do I Initialize an Evaluator?</h2>
 <p>Add this to your code - before you start batching over the dataset and making predictions:</p>
 <div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">sotabencheval.question_answering</span> <span class="kn">import</span> <span class="n">SQuADEvaluator</span><span class="p">,</span> <span class="n">SQuADVersion</span>
@@ -473,6 +467,26 @@ then you will enable direct comparison with the paper's model. For example:</p>
 
 
 <p>The above will directly compare with the result of the paper when run on the server.</p>
+<h2 id="server-data-location">Server Data Location</h2>
+<p>The SQuAD development data is located in the root of your repository on the server at <code>.data/nlp/squad</code>.
+In this folder is contained:</p>
+<ul>
+<li><code>dev-v1.1.json</code> - containing SQuAD v1.1 development dataset</li>
+<li><code>dev-v2.0.json</code> - containing SQuAD v2.0 development dataset</li>
+</ul>
+<p>You can use <code>evaluator.dataset_path: Path</code> to get a path to the dataset json file.
+In the example above it resolves to <code>.data/nlp/squad/dev-v2.0.json</code> on
+sotabench server and <code>./dev-v2.0.json</code> when run locally.
+If you want to use a non-standard file name or location when running locally
+you can override the defaults like this:</p>
+<div class="codehilite"><pre><span></span><span class="n">evaluator</span> <span class="o">=</span> <span class="n">SQuADEvaluator</span><span class="p">(</span>
+    <span class="o">...</span><span class="p">,</span>
+    <span class="n">local_root</span><span class="o">=</span><span class="s1">&#39;mydatasets&#39;</span><span class="p">,</span>
+    <span class="n">dataset_filename</span><span class="o">=</span><span class="s1">&#39;data.json&#39;</span>
+<span class="p">)</span>
+</pre></div>
+
+
 <h2 id="how-do-i-evaluate-predictions">How Do I Evaluate Predictions?</h2>
 <p>The evaluator object has an <code>.add(answers: Dict[str, str])</code> method to submit predictions by batch or in full.</p>
 <p>For SQuAD the expected input is a dictionary, where keys are question ids and values are text answers.
@@ -537,6 +551,51 @@ example for a PyTorch repository):</p>
 we simply return hashed results rather than running the whole evaluation again.</p>
 <p>Caching is very useful if you have large models, or a repository that is evaluating
 multiple models, as it speeds up evaluation significantly.</p>
+<h2 id="a-full-sotabenchpy-example">A Full sotabench.py Example</h2>
+<p>Below we show an implementation for a model from the AllenNLP repository. This
+incorporates all the features explained above: (a) using the SQuAD Evaluator,
+(b) using custom dataset location when run locally, and (c) the evaluation caching logic.</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">sotabencheval.question_answering</span> <span class="kn">import</span> <span class="n">SQuADEvaluator</span><span class="p">,</span> <span class="n">SQuADVersion</span>
+
+<span class="kn">from</span> <span class="nn">allennlp.data</span> <span class="kn">import</span> <span class="n">DatasetReader</span>
+<span class="kn">from</span> <span class="nn">allennlp.data.iterators</span> <span class="kn">import</span> <span class="n">DataIterator</span>
+<span class="kn">from</span> <span class="nn">allennlp.models.archival</span> <span class="kn">import</span> <span class="n">load_archive</span>
+<span class="kn">from</span> <span class="nn">allennlp.nn.util</span> <span class="kn">import</span> <span class="n">move_to_device</span>
+
+<span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">):</span>
+    <span class="n">archive</span> <span class="o">=</span> <span class="n">load_archive</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">cuda_device</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">archive</span><span class="o">.</span><span class="n">model</span>
+    <span class="n">reader</span> <span class="o">=</span> <span class="n">DatasetReader</span><span class="o">.</span><span class="n">from_params</span><span class="p">(</span><span class="n">archive</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;dataset_reader&quot;</span><span class="p">])</span>
+    <span class="n">iterator_params</span> <span class="o">=</span> <span class="n">archive</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;iterator&quot;</span><span class="p">]</span>
+    <span class="n">iterator_params</span><span class="p">[</span><span class="s2">&quot;batch_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">batch_size</span>
+    <span class="n">data_iterator</span> <span class="o">=</span> <span class="n">DataIterator</span><span class="o">.</span><span class="n">from_params</span><span class="p">(</span><span class="n">iterator_params</span><span class="p">)</span>
+    <span class="n">data_iterator</span><span class="o">.</span><span class="n">index_with</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">vocab</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">reader</span><span class="p">,</span> <span class="n">data_iterator</span>
+
+<span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">data_iterator</span><span class="p">,</span> <span class="n">evaluator</span><span class="p">):</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="n">evaluator</span><span class="o">.</span><span class="n">reset_time</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">data_iterator</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">num_epochs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="n">move_to_device</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="o">**</span><span class="n">batch</span><span class="p">)</span>
+        <span class="n">answers</span> <span class="o">=</span> <span class="p">{</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]:</span> <span class="n">prediction</span>
+                   <span class="k">for</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">prediction</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">],</span> <span class="n">predictions</span><span class="p">[</span><span class="s1">&#39;best_span_str&#39;</span><span class="p">])}</span>
+        <span class="n">evaluator</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">answers</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">cache_exists</span><span class="p">:</span>
+            <span class="k">break</span>
+
+<span class="n">evaluator</span> <span class="o">=</span> <span class="n">SQuADEvaluator</span><span class="p">(</span><span class="n">local_root</span><span class="o">=</span><span class="s2">&quot;data/nlp/squad&quot;</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;BiDAF (single)&quot;</span><span class="p">,</span>
+    <span class="n">paper_arxiv_id</span><span class="o">=</span><span class="s2">&quot;1611.01603&quot;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">SQuADVersion</span><span class="o">.</span><span class="n">V11</span><span class="p">)</span>
+
+<span class="n">model</span><span class="p">,</span> <span class="n">reader</span><span class="p">,</span> <span class="n">data_iter</span> <span class="o">=</span>\
+    <span class="n">load_model</span><span class="p">(</span><span class="s2">&quot;https://allennlp.s3.amazonaws.com/models/bidaf-model-2017.09.15-charpad.tar.gz&quot;</span><span class="p">)</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">evaluator</span><span class="o">.</span><span class="n">dataset_path</span><span class="p">)</span>
+<span class="n">evaluate</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">data_iter</span><span class="p">,</span> <span class="n">evaluator</span><span class="p">)</span>
+<span class="n">evaluator</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="n">evaluator</span><span class="o">.</span><span class="n">results</span><span class="p">)</span>
+</pre></div>
+
+
 <h2 id="need-more-help">Need More Help?</h2>
 <p>Head on over to the <a href="https://forum.sotabench.com/c/natural-language-processing">Natural Language Processing</a> section of the sotabench
 forums if you have any questions or difficulties.</p>
