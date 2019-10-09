@@ -31,7 +31,7 @@ You should read the [full documentation here](https://paperswithcode.github.io/s
 
 Integration is lightweight. For example, if you are evaluating an ImageNet model, you initialize an Evaluator object and (optionally) link to the paper where the model originated from to compare with published results:
 
-```
+```python
 from sotabencheval.image_classification import ImageNetEvaluator
 evaluator = ImageNetEvaluator(
              model_name='ResNeXt-101-32x8d',
@@ -40,7 +40,7 @@ evaluator = ImageNetEvaluator(
 
 Then for each batch of predictions your model makes on ImageNet, you pass a dictionary of keys as image IDs and values as output predictions to the `evaluator.add` method:
 
-```
+```python
 evaluator.add(dict(zip(image_ids, batch_output)))
 ```
 
