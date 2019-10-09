@@ -1,4 +1,5 @@
 # Some of the processing logic here is based on the torchvision ImageNet dataset
+# https://github.com/pytorch/vision/blob/master/torchvision/datasets/imagenet.py
 
 import numpy as np
 import os
@@ -11,6 +12,7 @@ import time
 from sotabencheval.utils import AverageMeter, calculate_batch_hash, download_url, change_root_if_server, is_server
 from sotabencheval.utils import get_max_memory_allocated
 from sotabencheval.image_classification.utils import top_k_accuracy_score
+
 
 ARCHIVE_DICT = {
     'labels': {
@@ -37,6 +39,7 @@ class ImageNetEvaluator(object):
             from torch.utils.data import DataLoader
 
             from sotabencheval.image_classification import ImageNetEvaluator
+            from sotabencheval.utils import is_server
 
             if is_server():
                 DATA_ROOT = './.data/vision/imagenet'
@@ -107,11 +110,12 @@ class ImageNetEvaluator(object):
                  paper_pwc_id: str = None,
                  paper_results: dict = None,
                  model_description=None,):
-        """Benchmarking function.
+        """Initializes an ImageNet Evaluator object
 
         Args:
             root (string): Root directory of the ImageNet Dataset - where the
-            label data is located (or will be downloaded to).
+            label data is located (or will be downloaded to). Note this does not download
+            the full ImageNet dataset (!) but just annotation information.
             model_name (str, optional): The name of the model from the
                 paper - if you want to link your build to a model from a
                 machine learning paper. See the ImageNet benchmark page for model names,
@@ -135,10 +139,11 @@ class ImageNetEvaluator(object):
                 'Top 5 Accuracy'.
             model_description (str, optional): Optional model description.
         """
-
         root = self.root = os.path.expanduser(change_root_if_server(
             root=root,
             server_root="./.data/vision/imagenet"))
+
+        # Model metadata
 
         self.model_name = model_name
         self.paper_arxiv_id = paper_arxiv_id
@@ -148,14 +153,18 @@ class ImageNetEvaluator(object):
 
         self.top1 = AverageMeter()
         self.top5 = AverageMeter()
-
         self.load_targets()
 
         self.outputs = {}
         self.results = None
+
+        # Backend variables for hashing and caching
+
         self.first_batch_processed = False
         self.batch_hash = None
         self.cached_results = False
+
+        # Speed and memory metrics
 
         self.speed_mem_metrics = {}
         self.init_time = time.time()
@@ -167,8 +176,12 @@ class ImageNetEvaluator(object):
         then sets self.results to cached results and returns True.
 
         You can use this property for control flow to break a for loop over a dataset
-        after the first iteration. This prevents rerunning the same calculation for the
+        after the first iteration. This prevents re-running the same calculation for the
         same model twice.
+
+        Q: Why should the user use this?
+        A: If you want fast "continuous evaluation" and don't want to avoid rerunning the same model over and over
+            each time you commit something new to your repository.
 
         Examples:
             Breaking a for loop for a PyTorch evaluation
@@ -192,9 +205,10 @@ class ImageNetEvaluator(object):
 
                 evaluator.save()  # uses the cached results
 
-        :return:
-        """
+        This logic is for the server; it will not break the loop if you evaluate locally.
 
+        :return: bool or None (if not in check mode)
+        """
         if not self.first_batch_processed:
             raise ValueError('No batches of data have been processed so no batch_hash exists')
 
@@ -217,7 +231,8 @@ class ImageNetEvaluator(object):
 
     def load_targets(self):
         """
-        Downloads ImageNet labels and IDs and puts into self.root, then loads at self.targets
+        Downloads ImageNet labels and IDs and puts into self.root, then loads to self.targets
+
         :return: void - update self.targets with the ImageNet validation data labels, and downloads if
         the pickled validation data is not in the root location
         """
@@ -233,7 +248,7 @@ class ImageNetEvaluator(object):
         """
         Updates the evaluator with new results
 
-        :param output_dict (dict): Where keys are image IDs, and each value should be an 1D np.ndarray of size 1000
+        :param output_dict: (dict) Where keys are image IDs, and each value should be an 1D np.ndarray of size 1000
         containing logits for that image ID.
         :return: void - updates self.outputs with the new IDSs and prediction
 
@@ -245,7 +260,6 @@ class ImageNetEvaluator(object):
                 my_evaluator.add({'ILSVRC2012_val_00000293': np.array([1.04243, ...]),
                 'ILSVRC2012_val_00000294': np.array([-2.3677, ...])})
         """
-
         if not output_dict:
             print('Empty output_dict; will not process')
             return
@@ -312,20 +326,27 @@ class ImageNetEvaluator(object):
         return self.results
 
     def reset_time(self):
+        """
+        Simple method to reset the timer self.init_time. Often used before a loop, to time the evaluation
+        appropriately, for example:
+
+        :return: void - resets self.init_time
+        """
         self.init_time = time.time()
 
     def save(self):
         """
-        Calculate results and then puts into a BenchmarkResult object
+        Calculate results and then put into a BenchmarkResult object
 
-        On the sotabench.com server, this will produce a JSON file serialisation and results will be recorded
-        on the platform.
+        On the sotabench.com server, this will produce a JSON file serialisation in sotabench_results.json and results
+        will be recorded on the platform.
 
         :return: BenchmarkResult object with results and metadata
         """
-
         # recalculate to ensure no mistakes made during batch-by-batch metric calculation
         self.get_results()
+
+        # If this is the first time the model is run, then we record evaluation time information
 
         if not self.cached_results:
             exec_speed = (time.time() - self.init_time)
