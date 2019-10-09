@@ -15,7 +15,41 @@ class WMTDataset(Enum):
 
 
 class WMTEvaluator(BaseEvaluator):
+    """Evaluator for WMT Machine Translation benchmarks.
+
+    Examples:
+        Evaluate a Transformer model from the fairseq repository on WMT2019 news test set:
+
+        .. code-block:: python
+
+            from sotabencheval.machine_translation import WMTEvaluator, WMTDataset, Language
+            from tqdm import tqdm
+            import torch
+
+            evaluator = WMTEvaluator(
+                dataset=WMTDataset.News2019,
+                source_lang=Language.English,
+                target_lang=Language.German,
+                local_root="data/nlp/wmt",
+                model_name="Facebook-FAIR (single)",
+                paper_arxiv_id="1907.06616"
+            )
+
+            model = torch.hub.load('pytorch/fairseq', 'transformer.wmt19.en-de.single_model',
+                force_reload=True, tokenizer='moses', bpe='fastbpe').cuda()
+
+            for sid, text in tqdm(evaluator.metrics.source_segments.items()):
+                translated = model.translate(text)
+                evaluator.add({sid: translated})
+                if evaluator.cache_exists:
+                    break
+
+            evaluator.save()
+            print(evaluator.results)
+    """
+
     task = "Machine Translation"
+
     _datasets = {
         (WMTDataset.News2014, Language.English, Language.German),
         (WMTDataset.News2019, Language.English, Language.German),
@@ -35,6 +69,53 @@ class WMTEvaluator(BaseEvaluator):
                  paper_results: dict = None,
                  model_description: str = None,
                  tokenization: Callable[[str], str] = None):
+        """
+        Creates an evaluator for one of the WMT benchmarks.
+
+        :param dataset: Which dataset to evaluate on, f.e., WMTDataset.News2014.
+        :param source_lang: Source language of the documents to translate.
+        :param target_lang: Target language into which the documents are translated.
+        :param local_root: Path to the directory where the dataset files are located locally.
+            Ignored when run on sotabench server.
+        :param source_dataset_filename: Local filename of the SGML file with the source documents.
+            If None, the standard WMT filename is used, based on :param:`dataset`,
+            :param:`source_lang` and :param:`target_lang`.
+            Ignored when run on sotabench server.
+        :param target_dataset_filename: Local filename of the SGML file with the reference documents.
+            If None, the standard WMT filename is used, based on :param:`dataset`,
+            :param:`source_lang` and :param:`target_lang`.
+            Ignored when run on sotabench server.
+        :param model_name: The name of the model from the
+            paper - if you want to link your build to a model from a
+            machine learning paper. See the WMT benchmarks page for model names,
+            (f.e., https://sotabench.com/benchmarks/machine-translation-on-wmt2014-english-german)
+            on the paper leaderboard or models yet to try tab.
+        :param paper_arxiv_id: Optional linking to arXiv if you
+            want to link to papers on the leaderboard; put in the
+            corresponding paper's arXiv ID, e.g. '1907.06616'.
+        :param paper_pwc_id: Optional linking to Papers With Code;
+            put in the corresponding papers with code URL slug, e.g.
+            'facebook-fairs-wmt19-news-translation-task'
+        :param paper_results: If the paper model you are reproducing
+            does not have model results on sotabench.com, you can specify
+            the paper results yourself through this argument, where keys
+            are metric names, values are metric values. e.g:
+
+                    {'SacreBLEU': 42.7, 'BLEU score': 43.1}.
+
+            Ensure that the metric names match those on the sotabench
+            leaderboard - for WMT benchmarks it should be `SacreBLEU` for de-tokenized
+            mix-cased BLEU score and `BLEU score` for tokenized BLEU.
+        :param model_description: Optional model description.
+        :param tokenization: An optional tokenization function to compute tokenized BLEU score.
+            It takes a single string - a segment to tokenize, and returns a string with tokens
+            separated by space, f.e.:
+
+                    tokenization = lambda seg: seg.replace("'s", " 's").replace("-", " - ")
+
+            If None, only de-tokenized SacreBLEU score is reported.
+        """
+
         super().__init__(model_name, paper_arxiv_id, paper_pwc_id, paper_results, model_description)
         self.root = change_root_if_server(root=local_root,
                                           server_root=".data/nlp/wmt")
@@ -78,8 +159,27 @@ class WMTEvaluator(BaseEvaluator):
         ds_names = {WMTDataset.News2014: "WMT2014", WMTDataset.News2019: "WMT2019"}
         return "{0} {1}-{2}".format(ds_names.get(self.dataset), self.source_lang.fullname, self.target_lang.fullname)
 
-
     def add(self, answers: Dict[str, str]):
+        """
+        Updates the evaluator with new results
+
+        :param answers: a dict where keys are source segments ids and values are translated segments
+            (segment id is created by concatenating document id and the original segment id,
+            separated by `#`.)
+
+        Examples:
+            Update the evaluator with three results:
+
+            .. code-block:: python
+
+                my_evaluator.add({
+                    'bbc.381790#1': 'Waliser AMs sorgen sich um "Aussehen wie Muppets"',
+                    'bbc.381790#2': 'Unter einigen AMs herrscht Bestürzung über einen...',
+                    'bbc.381790#3': 'Sie ist aufgrund von Plänen entstanden, den Namen...'
+                })
+
+        .. seealso:: `sotabencheval.machine_translation.TranslationMetrics.source_segments`
+        """
 
         self.metrics.add(answers)
 
@@ -91,9 +191,30 @@ class WMTEvaluator(BaseEvaluator):
             self.first_batch_processed = True
 
     def reset(self):
+        """
+        Removes already added translations
+
+        When checking if the model should be rerun on whole dataset it is first run on a smaller subset
+        and the results are compared with values cached on sotabench server (the check is not performed
+        when running locally.) Ideally, the smaller subset is just the first batch, so no additional
+        computation is needed. However, for more complex multistage pipelines it maybe simpler to
+        run a model twice - on a small dataset and (if necessary) on the full dataset. In that case
+        :func:`reset` needs to be called before the second run so values from the first run are not reported.
+
+        .. seealso:: :func:`cache_exists`
+        .. seealso:: :func:`reset_time`
+        """
+
         self.metrics.reset()
 
     def get_results(self):
+        """
+        Gets the results for the evaluator. Empty string is assumed for segments for which in translation
+        was provided.
+
+        :return: dict with `SacreBLEU` and `BLEU score`
+        """
+
         if self.cached_results:
             return self.results
         self.results = self.metrics.get_results()
