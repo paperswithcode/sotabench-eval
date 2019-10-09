@@ -94,7 +94,7 @@
       <div class="md-flex__cell md-flex__cell--shrink">
         <a href=".." title="sotabencheval Docs" class="md-header-nav__button md-logo">
           
-            <i class="md-icon"></i>
+            <i class="md-icon">explore</i>
           
         </a>
       </div>
@@ -164,7 +164,7 @@
   <label class="md-nav__title md-nav__title--site" for="__drawer">
     <a href=".." title="sotabencheval Docs" class="md-nav__button md-logo">
       
-        <i class="md-icon"></i>
+        <i class="md-icon">explore</i>
       
     </a>
     sotabencheval Docs
@@ -477,6 +477,23 @@ then you will enable direct comparison with the paper's model. For example:</p>
 
 
 <p>The above will directly compare with the result of the paper when run on the server.</p>
+<p>By default the evaluator computes a detokenized mixed-case SacreBLEU score.
+To get a tokenized BLEU score as well, during construction of the evaluator set
+a <code>tokenization: Callable[[str], str]</code> parameter to a function that tokenizes
+an input segment and returns segment with tokens separated by space, f.e.:</p>
+<div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">get_tokenization</span><span class="p">():</span>
+    <span class="n">mt</span> <span class="o">=</span> <span class="n">sacremoses</span><span class="o">.</span><span class="n">MosesTokenizer</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">tokenize</span><span class="p">(</span><span class="n">sentence</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">mt</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">sentence</span><span class="p">,</span> <span class="n">return_str</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tokenize</span>
+
+<span class="n">evaluator</span> <span class="o">=</span> <span class="n">WMTEvaluator</span><span class="p">(</span>
+    <span class="o">...</span><span class="p">,</span>
+    <span class="n">tokenization</span><span class="o">=</span><span class="n">get_tokenization</span><span class="p">()</span>
+<span class="p">)</span>
+</pre></div>
+
+
 <p>Instead of parsing the dataset files by yourself you can access raw segments as strings:</p>
 <div class="codehilite"><pre><span></span>    <span class="k">for</span> <span class="n">segment_id</span><span class="p">,</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">source_segments</span><span class="p">:</span>
         <span class="c1"># translate text</span>
@@ -587,7 +604,7 @@ For clarity we omit batching and simply translate segment by segment.</p>
 
 
 <h2 id="need-more-help">Need More Help?</h2>
-<p>Head on over to the <a href="https://forum.sotabench.com/c/nlp">Natural Language Processing</a> section of the sotabench
+<p>Head on over to the <a href="https://forum.sotabench.com/c/natural-language-processing">Natural Language Processing</a> section of the sotabench
 forums if you have any questions or difficulties.</p>
                 
                   
