@@ -1,19 +1,15 @@
-import os
 import time
-from itertools import islice
 from enum import Enum
 from pathlib import Path
 
 import numpy as np
 
-from sotabenchapi.check import in_check_mode
-from sotabenchapi.client import Client
-from sotabenchapi.core import BenchmarkResult, check_inputs
 from sotabencheval.core import BaseEvaluator
 from sotabencheval.utils import calculate_batch_hash, extract_archive, change_root_if_server, is_server, get_max_memory_allocated
 
+
 class WikiTextDataset(Enum):
-    """Enum used to select dataset on which evaluation is executed. """
+    """Enum used to select the dataset on which evaluation is executed. """
     WikiText103 = ('WikiText-103', 245569, 267735)
     WikiText2 = ('WikiText-2', 245569, 33278)
     
@@ -86,7 +82,7 @@ def _gather_probs(log_probs, targets):
     
 class WikiTextEvaluator(BaseEvaluator):
     task = "Language Modelling"
-    dataset = None # defined in a subclass
+    dataset = None  # defined in a subclass
 
     def __init__(self,
                  local_root: str = '.',
@@ -289,6 +285,7 @@ class WikiText103Evaluator(WikiTextEvaluator):
             evaluator.print_results()
     """
     dataset = WikiTextDataset.WikiText103
+
 
 class WikiText2Evaluator(WikiTextEvaluator):
     """`WikiText103 <https://sotabench.com/benchmarks/language-modelling-on-wikitext-2>`_ benchmark.

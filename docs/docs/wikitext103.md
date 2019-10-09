@@ -36,9 +36,11 @@ It is the original zip file released [here](https://blog.einstein.ai/the-wikitex
 We are running the benchmark on the `wiki.test.tokens` dataset.
 We have two helper methods that will unpack the dataset for you and give you the `pathlib.Path`  to the test file.
 
-First one `test_set_path` is available once you instantiate the WikiText103Evaluator
+The first option `test_set_path` is available once you instantiate the `WikiText103Evaluator`:
 
 ```python
+...
+
 evaluator = WikiText103Evaluator(
     model_name="Transformer-XL Large", 
     paper_arxiv_id="1901.02860",
@@ -50,7 +52,10 @@ with evaluator.test_set_path.open() as f:
     test_data = torch.tensor(tokenizer.encode(f.read())).to("cuda")
 ```
 
-Second option `WikiText103Evaluator.get_test_set_path(local_root)` is there if you need path to the files before you get your first instance of WikiText evaluator, for example if you are going to reuse the data for multiple models.
+There is a second option available if you are evaluating multiple models and need to use the same
+dataset multiple times - `WikiText103Evaluator.get_test_set_path(local_root)`. This will get the path before 
+you initialize a WikiText evaluator:
+
 ```python
 from sotabencheval.language_modelling import WikiText103Evaluator
 
@@ -72,9 +77,8 @@ evaluator = WikiText103Evaluator(model_name='Model name as found in paperswithco
 If you are reproducing a model from a paper, then you can enter the arXiv ID. If you
 put in the same model name string as on the
 [Wikitext-103](https://sotabench.com/benchmarks/language-modelling-on-wikitext-103) leaderboard
-then you will enable direct comparison with the paper's model. 
-If the `arxiv` is not available you can use `paperswithcode.com` id.  
-Below is an example of an evaluator that matches `Transformer XL`:
+then you will enable direct comparison with the paper's model. If the `arxiv_id` is not available you 
+can use `paperswithcode.com` id. Below is an example of an evaluator that matches `Transformer XL`:
 
 ``` python
 from sotabencheval.language_modelling import WikiText103Evaluator
@@ -91,18 +95,19 @@ The above will directly compare with the result of the paper when run on the ser
 
 ## How Do I Evaluate Predictions?
 
-The evaluator object has an `.add(log_probs:tensor, targets:tensor)` method to submit predictions by batch or in full. 
+The evaluator object has an `.add(log_probs, targets)` method to submit predictions by batch or in full. 
 We expect you to give us the log probability of a batch of target tokens and the `target` tokens themselves.
 The `log_probs` can be either:
-- a 0d tensor - summed log probability of all `targets` tokens, or 
-- a 2d tensor - log probabilities of each target token, the `log_probs.shape` have to match `targets.shape`
-- a 3d tensor - distribution of log probabilities for each position in the sequence, we will gather the probabilities of target tokens for you.
-It is recommended to use third or second option as it give use a way to check your perplexity calculations.
 
-If your model use subword tokenization you don't need convert subwords to full words. 
-You are free to report probability of each subwords, we will adjust the perplexity normalization for you, but make sure to set `subword_tokenization=True` in your evaluator. 
+- a 0d "tensor" (`np.ndarray`/`torch.tensor`) - summed log probability of all `targets` tokens 
+- a 2d "tensor" (`np.ndarray`/`torch.tensor`) - log probabilities of each target token, the `log_probs.shape` should match `targets.shape`
+- a 3d "tensor" (`np.ndarray`/`torch.tensor`) - distribution of log probabilities for each position in the sequence, we will gather the probabilities of target tokens for you.
 
-Here is an example how to report results (for a PyTorch example):
+It is recommended to use third or second option as it allows us to check your perplexity calculations.
+
+If your model uses subword tokenization you don't need convert subwords to full words. You are free to report probability of each subword: we will adjust the perplexity normalization accordingly. Just make sure to set `subword_tokenization=True` in your evaluator. 
+
+Here is an example of how to report results (for a PyTorch example):
 
 ``` python
 
@@ -175,7 +180,7 @@ multiple models, as it speeds up evaluation significantly.
 
 Below we show an implementation for a model from the `huggingface/transformers`. This
 incorporates all the features explained above: (a) using the server data, 
-(b) using the WikiText103 Evaluator, and (c) caching the evaluation logic:
+(b) using the WikiText-103 Evaluator, and (c) caching the evaluation logic:
 
 ``` python
 import torch
@@ -210,8 +215,8 @@ evaluator.save()
 evaluator.print_results()
 ```
 
-You can run this example on google [colab](https://colab.research.google.com/drive/1Qcp1_Fgo_aMtSgf_PV1gFw1DT6hEv7fW).
+You can run this example on [Google Colab](https://colab.research.google.com/drive/1Qcp1_Fgo_aMtSgf_PV1gFw1DT6hEv7fW).
 
 ## Need More Help?
 
-Head on over to the [Natural Language Processing](https://forum.sotabench.com/c/nlp) section of the sotabench forums if you have any questions or difficulties.
+Head on over to the [Natural Language Processing](https://forum.sotabench.com/c/natural-language-processing) section of the sotabench forums if you have any questions or difficulties.

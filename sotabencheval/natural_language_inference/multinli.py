@@ -1,22 +1,17 @@
-import os
 import csv
 import time
 
-from itertools import islice, zip_longest
-from enum import Enum
+from itertools import zip_longest
 from pathlib import Path
 
-import numpy as np
-
-from sotabenchapi.check import in_check_mode
-from sotabenchapi.client import Client
-from sotabenchapi.core import BenchmarkResult, check_inputs
 from sotabencheval.core import BaseEvaluator
 from sotabencheval.utils import calculate_batch_hash, extract_archive, change_root_if_server, is_server, get_max_memory_allocated
+
 
 def read_csv(path):
     with path.open('r') as f:
         yield from csv.DictReader(f, delimiter='\t')
+
 
 def get_path(local_root, local_unzip=False):
     root = Path(change_root_if_server(root=local_root,
@@ -26,6 +21,7 @@ def get_path(local_root, local_unzip=False):
     if not dataset_path.exists():  # unzip
         extract_archive(str(root / zip_name), to_path=root)
     return (dataset_path, dataset_path.parent / "dev_mismatched.tsv")
+
 
 class ClassificationEvaluator:
     def __init__(self, file_path):
@@ -62,6 +58,7 @@ class ClassificationEvaluator:
         if self.count != len(self.targets):
             return (accuracy, f"partial on {self.count} out of {len(self.targets)}")
         return accuracy
+
 
 class MultiNLI(BaseEvaluator):
     task = "Natural Language Inference"
