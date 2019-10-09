@@ -11,7 +11,7 @@ def top_k_accuracy_score(y_true, y_pred, k=5, normalize=True):
     """
 
     if len(y_true.shape) == 2:
-        y_true = y_true[0] # should be one-dimensional
+        y_true = y_true[0]  # should be one-dimensional
 
     num_obs, num_labels = y_pred.shape
 

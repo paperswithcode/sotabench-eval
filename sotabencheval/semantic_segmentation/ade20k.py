@@ -65,7 +65,7 @@ class ADE20KEvaluator(object):
                  paper_pwc_id: str = None,
                  paper_results: dict = None,
                  model_description=None):
-        """Benchmarking function.
+        """Initializes a COCO Evaluator object
 
         Args:
             model_name (str, optional): The name of the model from the
@@ -92,6 +92,8 @@ class ADE20KEvaluator(object):
             download (bool) : whether to download the data or not
         """
 
+        # Model metadata
+
         self.model_name = model_name
         self.paper_arxiv_id = paper_arxiv_id
         self.paper_pwc_id = paper_pwc_id
@@ -104,9 +106,14 @@ class ADE20KEvaluator(object):
         self.targets = np.array([])
 
         self.results = None
+
+        # Backend variables for hashing and caching
+
         self.first_batch_processed = False
         self.batch_hash = None
         self.cached_results = False
+
+        # Speed and memory metrics
 
         self.init_time = time.time()
         self.speed_mem_metrics = {}
@@ -142,7 +149,6 @@ class ADE20KEvaluator(object):
 
         :return: bool or None (if not in check mode)
         """
-
         if not self.first_batch_processed:
             raise ValueError('No batches of data have been processed so no batch_hash exists')
 
@@ -211,7 +217,6 @@ class ADE20KEvaluator(object):
 
         :return: void - updates self.ade20k_evaluator with the data, and updates self.targets and self.outputs
         """
-
         self.ade20k_evaluator.update(targets, outputs)
 
         self.targets = np.append(self.targets, targets)
@@ -231,7 +236,6 @@ class ADE20KEvaluator(object):
 
         :return: dict with ADE20K metrics
         """
-
         if self.cached_results:
             return self.results
 
@@ -250,6 +254,12 @@ class ADE20KEvaluator(object):
         return self.results
 
     def reset_time(self):
+        """
+        Simple method to reset the timer self.init_time. Often used before a loop, to time the evaluation
+        appropriately, for example:
+
+        :return: void - resets self.init_time
+        """
         self.init_time = time.time()
 
     def save(self):
@@ -264,6 +274,8 @@ class ADE20KEvaluator(object):
 
         # recalculate to ensure no mistakes made during batch-by-batch metric calculation
         self.get_results()
+
+        # If this is the first time the model is run, then we record evaluation time information
 
         if not self.cached_results:
             self.speed_mem_metrics['Tasks / Evaluation Time'] = None

@@ -36,19 +36,25 @@ class AverageMeter(object):
 def calculate_batch_hash(output):
     """Calculate the hash for the output of a batch
 
+    Output is passed into this method, stringified, and a hash is taken of the contents. For example,
+    it could be an list of predictions that is passed in.
+
     Args:
         output: data to be hashed
     """
-
     m = hashlib.sha256()
     m.update(str(output).encode("utf-8"))
     return m.hexdigest()
 
 
-def change_root_if_server(root, server_root):
+def change_root_if_server(root: str, server_root: str):
     """
-    :param root: string with a user-specified root
-    :param server_root: string with a server root
+    This method checks whether code is being executed on the sotabench server - if so it returns
+    server_root, else root. Written as a method so the user doesn't have to fiddle with environmental
+    variables.
+
+    :param root: (str) a user-specified root
+    :param server_root: (str) a server root
     :return: server_root if SOTABENCH_SERVER env variable is set, else root
     """
     check_server = os.environ.get("SOTABENCH_SERVER")
@@ -61,10 +67,25 @@ def change_root_if_server(root, server_root):
 
 def is_server():
     """
-    If true, uses env variable SOTABENCH_SERVER to determine whether code is being run on the server
+    Checks whether code is being executed on server; if so, returns True else False.
+
+    Uses env variable SOTABENCH_SERVER to determine whether code is being run on the server.
 
     You can use this function for your control flow for server specific settings - e.g. the data paths.
-    :return:
+
+    Examples:
+
+        .. code-block:: python
+
+
+            from sotabencheval.utils import is_server
+
+            if is_server():
+                DATA_ROOT = './.data/vision/imagenet'
+            else: # local settings
+                DATA_ROOT = '/home/ubuntu/my_data/'
+
+    :return: bool - whether the code is being run on the server or not
     """
     if os.environ.get("SOTABENCH_SERVER") == 'true':
         return True
@@ -72,13 +93,13 @@ def is_server():
         return False
 
 
-def set_env_on_server(env_name, value):
+def set_env_on_server(env_name: str, value):
     """
     If run on sotabench server, sets an environment variable with a given name to value (casted to str).
 
-    :param env_name: environment variable name
+    :param env_name: (str) environment variable name
     :param value: value to set if executed on sotabench
-    :return: whether code is being run on the server
+    :return: bool - whether code is being run on the server
     """
     if is_server():
         os.environ[env_name] = str(value)
@@ -86,16 +107,28 @@ def set_env_on_server(env_name, value):
     return False
 
 
-def get_max_memory_allocated(device='cuda'):
+def get_max_memory_allocated(device: str = 'cuda'):
+    """
+    Finds out the maximum memory allocated, then clears the max memory allocated.
+
+    This currently only works for PyTorch models.
+
+    TODO: Support TensorFlow and MXNet.
+
+    :param device: (str) - name of device (Torch style) -> e.g. 'cuda'
+    :return: float or None - if torch is in the environment, max memory allocated, else None
+    """
     try:
         import torch
-        max_mem = torch.cuda.max_memory_allocated(device='cuda')
-        torch.cuda.reset_max_memory_allocated(device='cuda')
+        max_mem = torch.cuda.max_memory_allocated(device=device)
+        torch.cuda.reset_max_memory_allocated(device=device)
         return max_mem
     except ImportError:
         return None
 
-# below utilities are taken from the torchvision repository
+# Below the utilities have been taken directly from the torchvision repository
+# Contains helper functions for unzipping and making directories
+# https://github.com/pytorch/vision/tree/master/torchvision
 
 
 def makedir_exist_ok(dirpath):
