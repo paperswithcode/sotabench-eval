@@ -135,7 +135,8 @@ class WikiTextEvaluator(BaseEvaluator):
         self.subword_tokenization = subword_tokenization
         self.text_transformation = text_transformation
         self.local_root = local_root 
-        self.reset()
+        self._neglogloss = 0
+        self._data_set_size = 0 
     
     @property
     def dataset_path(self): # deprecated 
