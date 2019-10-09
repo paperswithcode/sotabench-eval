@@ -29,7 +29,7 @@ pip install sotabench-eval
 
 You should read the [full documentation here](https://paperswithcode.github.io/sotabench-eval/index.html), which contains guidance on getting started and connecting to [sotabench](https://www.sotabench.com).
 
-Integration is lightweight. For example, if you are evaluating an ImageNet model, you initialize an Evaluator object and (optionally) link to the paper where the model originated from to compare with published results:
+Integration is lightweight. For example, if you are evaluating an ImageNet model, you initialize an Evaluator object and (optionally) link to any linked paper:
 
 ```python
 from sotabencheval.image_classification import ImageNetEvaluator
@@ -38,13 +38,13 @@ evaluator = ImageNetEvaluator(
              paper_arxiv_id='1906.06423')
 ```
 
-Then for each batch of predictions your model makes on ImageNet, you would pass a dictionary of keys as image IDs and values as a `np.ndarray`s of logits for each class to the `evaluator.add` method:
+Then for each batch of predictions your model makes on ImageNet, pass a dictionary of keys as image IDs and values as a `np.ndarray`s of logits to the `evaluator.add` method:
 
 ```python
 evaluator.add(output_dict=dict(zip(image_ids, batch_output)))
 ```
 
-This logic just needs to be written in a `sotabench.py` file (which contains whatever evaluation logic you need - e.g loading and processing the data), and sotabench will run it on each commit and record the results:
+The evaluation logic just needs to be written in a `sotabench.py` file and sotabench will run it on each commit and record the results:
 
 <img width=500 src="/docs/docs/img/results.png">
 
