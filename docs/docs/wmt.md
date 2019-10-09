@@ -76,6 +76,24 @@ evaluator = WMTEvaluator(
 
 The above will directly compare with the result of the paper when run on the server.
 
+By default the evaluator computes a detokenized mixed-case SacreBLEU score.
+To get a tokenized BLEU score as well, during construction of the evaluator set
+a `tokenization: Callable[[str], str]` parameter to a function that tokenizes
+an input segment and returns segment with tokens separated by space, f.e.:
+
+``` python
+def get_tokenization():
+    mt = sacremoses.MosesTokenizer()
+    def tokenize(sentence):
+        return mt.tokenize(sentence, return_str=True)
+    return tokenize
+
+evaluator = WMTEvaluator(
+    ...,
+    tokenization=get_tokenization()
+)
+```
+
 Instead of parsing the dataset files by yourself you can access raw segments as strings:
 
 ``` python
@@ -204,5 +222,5 @@ print(evaluator.results)
 
 ## Need More Help?
 
-Head on over to the [Natural Language Processing](https://forum.sotabench.com/c/nlp) section of the sotabench
+Head on over to the [Natural Language Processing](https://forum.sotabench.com/c/natural-language-processing) section of the sotabench
 forums if you have any questions or difficulties.
