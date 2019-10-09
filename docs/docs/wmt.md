@@ -209,7 +209,7 @@ evaluator = WMTEvaluator(
 model = torch.hub.load('pytorch/fairseq', 'transformer.wmt19.en-de.single_model',
     force_reload=True, tokenizer='moses', bpe='fastbpe').cuda()
 
-for sid, text in tqdm(evaluator.metrics.source_segments.items()):
+for sid, text in tqdm(evaluator.source_segments.items()):
     translated = model.translate(text)
     evaluator.add({sid: translated})
     if evaluator.cache_exists:

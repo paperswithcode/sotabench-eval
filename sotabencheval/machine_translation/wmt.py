@@ -38,7 +38,7 @@ class WMTEvaluator(BaseEvaluator):
             model = torch.hub.load('pytorch/fairseq', 'transformer.wmt19.en-de.single_model',
                 force_reload=True, tokenizer='moses', bpe='fastbpe').cuda()
 
-            for sid, text in tqdm(evaluator.metrics.source_segments.items()):
+            for sid, text in tqdm(evaluator.source_segments.items()):
                 translated = model.translate(text)
                 evaluator.add({sid: translated})
                 if evaluator.cache_exists:
@@ -87,9 +87,9 @@ class WMTEvaluator(BaseEvaluator):
             Ignored when run on sotabench server.
         :param model_name: The name of the model from the
             paper - if you want to link your build to a model from a
-            machine learning paper. See the WMT benchmarks page for model names,
+            machine learning paper. See the WMT benchmarks pages for model names,
             (f.e., https://sotabench.com/benchmarks/machine-translation-on-wmt2014-english-german)
-            on the paper leaderboard or models yet to try tab.
+            on the paper leaderboard or models yet to try tabs.
         :param paper_arxiv_id: Optional linking to arXiv if you
             want to link to papers on the leaderboard; put in the
             corresponding paper's arXiv ID, e.g. '1907.06616'.
@@ -105,7 +105,7 @@ class WMTEvaluator(BaseEvaluator):
 
             Ensure that the metric names match those on the sotabench
             leaderboard - for WMT benchmarks it should be `SacreBLEU` for de-tokenized
-            mix-cased BLEU score and `BLEU score` for tokenized BLEU.
+            case sensitive BLEU score and `BLEU score` for tokenized BLEU.
         :param model_description: Optional model description.
         :param tokenization: An optional tokenization function to compute tokenized BLEU score.
             It takes a single string - a segment to tokenize, and returns a string with tokens
@@ -178,7 +178,7 @@ class WMTEvaluator(BaseEvaluator):
                     'bbc.381790#3': 'Sie ist aufgrund von Plänen entstanden, den Namen...'
                 })
 
-        .. seealso:: `sotabencheval.machine_translation.TranslationMetrics.source_segments`
+        .. seealso:: `source_segments`
         """
 
         self.metrics.add(answers)
@@ -190,6 +190,44 @@ class WMTEvaluator(BaseEvaluator):
             )
             self.first_batch_processed = True
 
+    @property
+    def source_segments(self):
+        """
+        Ordered dictionary of all segments to translate with segments ids as keys. The same segments ids
+        have to be used when submitting translations with :func:`add`.
+
+        Examples:
+
+            .. code-block:: python
+
+                for segment_id, text in my_evaluator.source_segments.items():
+                    translated = model(text)
+                    my_evaluator.add({segment_id: translated})
+
+        .. seealso: `source_documents`
+        """
+
+        return self.metrics.source_segments
+
+    @property
+    def source_documents(self):
+        """
+        List of all documents to translate
+
+        Examples:
+
+            .. code-block:: python
+
+                for document in my_evaluator.source_documents:
+                    for segment in document.segments:
+                        translated = model(segment.text)
+                        my_evaluator.add({segment.id: translated})
+
+        .. seealso: `source_segments`
+        """
+
+        return self.metrics.source_documents
+
     def reset(self):
         """
         Removes already added translations
@@ -197,8 +235,8 @@ class WMTEvaluator(BaseEvaluator):
         When checking if the model should be rerun on whole dataset it is first run on a smaller subset
         and the results are compared with values cached on sotabench server (the check is not performed
         when running locally.) Ideally, the smaller subset is just the first batch, so no additional
-        computation is needed. However, for more complex multistage pipelines it maybe simpler to
-        run a model twice - on a small dataset and (if necessary) on the full dataset. In that case
+        computation is needed. However, for more complex multistage pipelines it may be simpler to
+        run the model twice - on a small dataset and (if necessary) on the full dataset. In that case
         :func:`reset` needs to be called before the second run so values from the first run are not reported.
 
         .. seealso:: :func:`cache_exists`
@@ -212,7 +250,7 @@ class WMTEvaluator(BaseEvaluator):
         Gets the results for the evaluator. Empty string is assumed for segments for which in translation
         was provided.
 
-        :return: dict with `SacreBLEU` and `BLEU score`
+        :return: dict with `SacreBLEU` and `BLEU score`.
         """
 
         if self.cached_results:

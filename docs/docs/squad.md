@@ -18,34 +18,11 @@ You can write whatever you want in your `sotabench.py` file to get model predict
 But you will need to record your results for the server, and you'll want to avoid doing things like
 downloading the dataset on the server. So you should:
 
-- **Point to the server SQuAD data path** - popular datasets are pre-downloaded on the server.
 - **Include an Evaluation object** in `sotabench.py` file to record the results.
+- **Point to the server SQuAD data path** - popular datasets are pre-downloaded on the server.
 - **Use Caching** *(optional)* - to speed up evaluation by hashing the first batch of predictions.
 
 We explain how to do these various steps below.
-
-## Server Data Location
-
-The SQuAD development data is located in the root of your repository on the server at `.data/nlp/squad`.
-In this folder is contained:
-
-- `dev-v1.1.json` - containing SQuAD v1.1 development dataset
-- `dev-v2.0.json` - containing SQuAD v2.0 development dataset
-
-Your local files may have a different file directory structure, so you
-can use control flow like below to change the data path if the script is being
-run on sotabench servers:
-
-``` python
-from sotabencheval.utils import is_server
-
-if is_server():
-    DATA_ROOT = '.data/nlp/squad'
-else: # local settings
-    DATA_ROOT = '/home/ubuntu/my_data/'
-```
-
-This will detect if `sotabench.py` is being run on the server and change behaviour accordingly.
 
 ## How Do I Initialize an Evaluator?
 
@@ -75,6 +52,28 @@ evaluator = SQuADEvaluator(model_name='SpanBERT',
 ```
 
 The above will directly compare with the result of the paper when run on the server.
+
+## Server Data Location
+
+The SQuAD development data is located in the root of your repository on the server at `.data/nlp/squad`.
+In this folder is contained:
+
+- `dev-v1.1.json` - containing SQuAD v1.1 development dataset
+- `dev-v2.0.json` - containing SQuAD v2.0 development dataset
+
+You can use `evaluator.dataset_path: Path` to get a path to the dataset json file.
+In the example above it resolves to `.data/nlp/squad/dev-v2.0.json` on
+sotabench server and `./dev-v2.0.json` when run locally.
+If you want to use a non-standard file name or location when running locally
+you can override the defaults like this:
+
+``` python
+evaluator = SQuADEvaluator(
+    ...,
+    local_root='mydatasets',
+    dataset_filename='data.json'
+)
+```
 
 ## How Do I Evaluate Predictions?
 
@@ -153,6 +152,52 @@ we simply return hashed results rather than running the whole evaluation again.
 Caching is very useful if you have large models, or a repository that is evaluating
 multiple models, as it speeds up evaluation significantly.
 
+## A Full sotabench.py Example
+
+Below we show an implementation for a model from the AllenNLP repository. This
+incorporates all the features explained above: (a) using the SQuAD Evaluator,
+(b) using custom dataset location when run locally, and (c) the evaluation caching logic.
+
+``` python
+from sotabencheval.question_answering import SQuADEvaluator, SQuADVersion
+
+from allennlp.data import DatasetReader
+from allennlp.data.iterators import DataIterator
+from allennlp.models.archival import load_archive
+from allennlp.nn.util import move_to_device
+
+def load_model(url, batch_size=64):
+    archive = load_archive(url, cuda_device=0)
+    model = archive.model
+    reader = DatasetReader.from_params(archive.config["dataset_reader"])
+    iterator_params = archive.config["iterator"]
+    iterator_params["batch_size"] = batch_size
+    data_iterator = DataIterator.from_params(iterator_params)
+    data_iterator.index_with(model.vocab)
+    return model, reader, data_iterator
+
+def evaluate(model, dataset, data_iterator, evaluator):
+    model.eval()
+    evaluator.reset_time()
+    for batch in data_iterator(dataset, num_epochs=1, shuffle=False):
+        batch = move_to_device(batch, 0)
+        predictions = model(**batch)
+        answers = {metadata['id']: prediction
+                   for metadata, prediction in zip(batch['metadata'], predictions['best_span_str'])}
+        evaluator.add(answers)
+        if evaluator.cache_exists:
+            break
+
+evaluator = SQuADEvaluator(local_root="data/nlp/squad", model_name="BiDAF (single)",
+    paper_arxiv_id="1611.01603", version=SQuADVersion.V11)
+
+model, reader, data_iter =\
+    load_model("https://allennlp.s3.amazonaws.com/models/bidaf-model-2017.09.15-charpad.tar.gz")
+dataset = reader.read(evaluator.dataset_path)
+evaluate(model, dataset, data_iter, evaluator)
+evaluator.save()
+print(evaluator.results)
+```
 
 ## Need More Help?
 

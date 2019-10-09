@@ -58,7 +58,7 @@ class BaseEvaluator:
                  paper_results: dict = None,
                  model_description=None,):
         """
-        Initializes an BaseEvaluator like object
+        Initializes a BaseEvaluator like object
 
         :param model_name: (str) The name of the model, for example 'ResNet-101', which will be saved to sotabench.com
         :param paper_arxiv_id: (str, optional) The paper that the model is linked to, e.g. '1906.06423'
