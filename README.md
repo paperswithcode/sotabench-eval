@@ -22,7 +22,7 @@ PRs welcome for further benchmarks!
 Requires Python 3.6+. 
 
 ```bash
-pip install sotabench-eval
+pip install sotabencheval
 ```
 
 ## Get Benching! 🏋️
