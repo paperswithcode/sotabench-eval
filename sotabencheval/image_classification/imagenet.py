@@ -276,8 +276,8 @@ class ImageNetEvaluator(object):
 
         if not self.first_batch_processed:
             hash_dict = output_dict
-            hash_dict['Top 1 Accuracy'] = self.top1.avg,
-            hash_dict['Top 5 Accuracy'] = self.top5.av
+            hash_dict['Top 1 Accuracy'] = self.top1.avg
+            hash_dict['Top 5 Accuracy'] = self.top5.avg
             self.batch_hash = calculate_batch_hash(hash_dict)
             self.first_batch_processed = True
 
