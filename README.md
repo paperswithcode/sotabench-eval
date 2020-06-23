@@ -12,7 +12,7 @@
 - [COCO](https://paperswithcode.github.io/sotabench-eval/coco/) (Object Detection)
 - [ImageNet](https://paperswithcode.github.io/sotabench-eval/imagenet/) (Image Classification)
 - [SQuAD](https://paperswithcode.github.io/sotabench-eval/squad/) (Question Answering)
-- [WikiText-103](https://paperswithcode.github.io/sotabench-eval/wikitext-103/) (Language Modelling)
+- [WikiText-103](https://paperswithcode.github.io/sotabench-eval/wikitext103/) (Language Modelling)
 - [WMT](https://paperswithcode.github.io/sotabench-eval/wmt/) (Machine Translation)
 
 PRs welcome for further benchmarks! 
