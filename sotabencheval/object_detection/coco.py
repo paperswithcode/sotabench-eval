@@ -124,7 +124,7 @@ class COCOEvaluator(object):
         :param annFile: path of the annotations file
         :return: void - extracts the archive
         """
-        if not os.path.isdir(annFile):
+        if not os.path.isfile(annFile):
             if "2017" in annFile:
                 annotations_dir_zip = os.path.join(
                     self.root, "annotations_train%s2017.zip" % self.split
