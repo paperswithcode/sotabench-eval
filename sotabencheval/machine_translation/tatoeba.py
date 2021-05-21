@@ -6,12 +6,17 @@ from pathlib import Path
 from enum import Enum
 from sacrebleu import corpus_bleu
 import time
+import urllib.request
+import tarfile
 import os
 
 MIN_CACHE_BATCH_SIZE = 32
 
 class TatoebaDataset(Enum):
     v1 = "v2020-07-28"
+
+_tatoeba_test_urls = { TatoebaDataset.v1: "https://object.pouta.csc.fi/Tatoeba-Challenge-devtest/test-v2020-07-28.tar" }
+
     
 class TatoebaEvaluator(BaseEvaluator):
     """Evaluator for Tatoeba benchmarks.
@@ -116,7 +121,7 @@ class TatoebaEvaluator(BaseEvaluator):
         if not os.path.isdir(root):
             raise FileNotFoundError("Couldn't access root directory for Tatoeba test data")
         if self.dataset == TatoebaDataset.v1:
-            path = os.path.join("test-v2020-07-28", "-".join(sorted((self.source_lang, self.target_lang))), "test.txt")
+            path = os.path.join("data", "test-v2020-07-28", "-".join(sorted((self.source_lang, self.target_lang))), "test.txt")
             if not os.path.isfile(os.path.join(root, path)):
                 raise FileNotFoundError(f"Pair {self.source_lang}-{self.target_lang} not found in given Tatoeba test data directory")
             return Path(self.root) / path
@@ -247,3 +252,60 @@ class TatoebaEvaluator(BaseEvaluator):
 
         return super().save(dataset=dataset)
 
+def _test_file_is_unambiguous(filename, source, target):
+    for line in open(filename):
+        parts = line.split('\t')
+        if parts[0] != source or parts[1] != target:
+            return False
+    return True
+
+def _test_file_ambiguity(filename, source, target):
+    source_ambig = target_ambig = 0
+    for i, line in enumerate(open(filename)):
+        parts = line.split('\t')
+        if parts[0] != source: source_ambig += 1
+        if parts[1] != target: target_ambig += 1
+    return (source_ambig/(i+1), target_ambig/(i+1))
+
+def _fetch_data(path, dataset = TatoebaDataset.v1):
+    if os.path.exists(path):
+        if not os.path.isdir(path):
+            raise FileNotFoundError(f"Given path {path} is not a directory!")
+    else:
+        print(f"Directory {path} doesn't exist, creating it...")
+        os.mkdir(path)
+    tarfile_path = os.path.join(path, "tatoeba_test.tar")
+    print("Downloading Tatoeba test data...")
+    urllib.request.urlretrieve(
+        _tatoeba_test_urls[dataset],
+        filename = tarfile_path)
+    tar_obj = tarfile.open(tarfile_path)
+    tar_obj.extractall(path)
+    tar_obj.close()
+    os.remove(tarfile_path)
+
+def fetch_and_configure_data(path):
+    _fetch_data(path)
+    print("Finding which language pairs have unambiguous columns...")
+    valid_pairs = 0
+    rejected_pairs = 0
+    datadir = os.path.join(path, "data", "test-v2020-07-28")
+    for dirname in os.listdir(datadir):
+        if '-' not in dirname or not os.path.isdir(os.path.join(datadir, dirname)):
+            continue
+        print(f"Checking {dirname}... ", end = '')
+        source, target = dirname.split('-')
+        dirname = os.path.join(datadir, dirname)
+        if _test_file_is_unambiguous(os.path.join(dirname, "test.txt"),
+                                    source, target):
+            print("OK!")
+            valid_pairs += 1
+        else:
+            source_ambig, target_ambig = _test_file_ambiguity(
+                os.path.join(dirname, "test.txt"), source, target)
+            print(f"Rejected; source side language tags differed from directory name in {100*source_ambig:.1f}% of lines, target side {100*target_ambig:.1f}%")
+            rejected_pairs += 1
+            os.remove(os.path.join(dirname, "test.txt"))
+            os.rmdir(dirname)
+            
+    print(f"Total of {valid_pairs} pairs accepted, {rejected_pairs} rejected")
